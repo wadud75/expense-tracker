@@ -135,16 +135,18 @@ export default function PurchaseShell({ children }) {
 
       <aside className={`sidebar ${isSidebarOpen ? "sidebar-open" : ""}`}>
         <div className="sidebar-brand">
-          <div className="brand-mark">
-            <Image src="/favicon.jpg" alt="Power Link logo" width={56} height={56} />
-          </div>
-          <div className="brand-copy">
-            <div className="brand-row">
-              <h1>{t.brandTitle}</h1>
+          <Link href="/" className="brand-link" onClick={() => setIsSidebarOpen(false)}>
+            <div className="brand-mark">
+              <Image src="/favicon.jpg" alt="Power Link logo" width={56} height={56} />
             </div>
-            {t.brandCode ? <p>{t.brandCode}</p> : null}
-            {t.brandStore ? <p>{t.brandStore}</p> : null}
-          </div>
+            <div className="brand-copy">
+              <div className="brand-row">
+                <h1>{t.brandTitle}</h1>
+              </div>
+              {t.brandCode ? <p>{t.brandCode}</p> : null}
+              {t.brandStore ? <p>{t.brandStore}</p> : null}
+            </div>
+          </Link>
           <button
             type="button"
             className="sidebar-close"

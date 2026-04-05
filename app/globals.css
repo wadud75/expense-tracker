@@ -126,6 +126,18 @@ textarea {
   padding: 16px 14px 18px;
 }
 
+.brand-link {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 14px;
+  color: inherit;
+  text-decoration: none;
+}
+
 .brand-mark {
   width: 56px;
   height: 56px;
@@ -149,6 +161,9 @@ textarea {
 .brand-copy {
   flex: 1;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   padding-top: 2px;
 }
 
