@@ -338,37 +338,58 @@ export default function DueManagementPage() {
             </label>
 
             <div className="due-filter-row">
-              <select
-                className="purchase-input due-select"
-                value={statusFilter}
-                onChange={(event) => setStatusFilter(event.target.value)}
-              >
-                <option value="all">All status</option>
-                <option value="open">Open</option>
-                <option value="overdue">Overdue</option>
-                <option value="settled">Settled</option>
-              </select>
+              <div className="purchase-select-wrap due-select-wrap">
+                <select
+                  className="purchase-input purchase-select-input due-select"
+                  value={statusFilter}
+                  onChange={(event) => setStatusFilter(event.target.value)}
+                >
+                  <option value="all">All status</option>
+                  <option value="open">Open</option>
+                  <option value="overdue">Overdue</option>
+                  <option value="settled">Settled</option>
+                </select>
+                <span className="purchase-select-arrow" aria-hidden="true">
+                  <svg viewBox="0 0 20 20">
+                    <path d="m5 7 5 5 5-5" />
+                  </svg>
+                </span>
+              </div>
 
-              <select
-                className="purchase-input due-select"
-                value={directionFilter}
-                onChange={(event) => setDirectionFilter(event.target.value)}
-              >
-                <option value="all">All flow</option>
-                <option value="receivable">Receivable</option>
-                <option value="payable">Payable</option>
-              </select>
+              <div className="purchase-select-wrap due-select-wrap">
+                <select
+                  className="purchase-input purchase-select-input due-select"
+                  value={directionFilter}
+                  onChange={(event) => setDirectionFilter(event.target.value)}
+                >
+                  <option value="all">All flow</option>
+                  <option value="receivable">Receivable</option>
+                  <option value="payable">Payable</option>
+                </select>
+                <span className="purchase-select-arrow" aria-hidden="true">
+                  <svg viewBox="0 0 20 20">
+                    <path d="m5 7 5 5 5-5" />
+                  </svg>
+                </span>
+              </div>
 
-              <select
-                className="purchase-input due-select"
-                value={sourceFilter}
-                onChange={(event) => setSourceFilter(event.target.value)}
-              >
-                <option value="all">All sources</option>
-                <option value="sale">Sales invoices</option>
-                <option value="purchase">Purchase bills</option>
-                <option value="manual">Manual entries</option>
-              </select>
+              <div className="purchase-select-wrap due-select-wrap">
+                <select
+                  className="purchase-input purchase-select-input due-select"
+                  value={sourceFilter}
+                  onChange={(event) => setSourceFilter(event.target.value)}
+                >
+                  <option value="all">All sources</option>
+                  <option value="sale">Sales invoices</option>
+                  <option value="purchase">Purchase bills</option>
+                  <option value="manual">Manual entries</option>
+                </select>
+                <span className="purchase-select-arrow" aria-hidden="true">
+                  <svg viewBox="0 0 20 20">
+                    <path d="m5 7 5 5 5-5" />
+                  </svg>
+                </span>
+              </div>
             </div>
           </div>
 
