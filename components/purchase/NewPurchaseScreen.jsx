@@ -15,14 +15,6 @@ const EMPTY_MASTER_DATA = {
   variant: [],
 };
 
-function BackIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M15 18l-6-6 6-6" />
-    </svg>
-  );
-}
-
 function ChevronDownIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -107,16 +99,6 @@ function PurchaseFormContent({ modal, t, router }) {
     };
   }, []);
 
-  const closeButton = modal ? (
-    <button type="button" className="purchase-back" onClick={() => router.back()} aria-label={t.cancel}>
-      <BackIcon />
-    </button>
-  ) : (
-    <Link href="/purchase" className="purchase-back" aria-label={t.cancel}>
-      <BackIcon />
-    </Link>
-  );
-
   const handleChange = (event) => {
     const { name, value } = event.target;
     setFormState((currentValue) => ({
@@ -176,7 +158,13 @@ function PurchaseFormContent({ modal, t, router }) {
         throw new Error(result.error || "Failed to save purchase.");
       }
 
-      router.push("/purchase");
+      if (modal) {
+        router.back();
+        router.refresh();
+        return;
+      }
+
+      router.replace("/purchase");
       router.refresh();
     } catch (error) {
       setErrorMessage(error.message || "Failed to save purchase.");
@@ -189,7 +177,6 @@ function PurchaseFormContent({ modal, t, router }) {
     <form className={modal ? "purchase-modal-card" : "purchase-page-shell"} onSubmit={handleSubmit}>
       <header className="purchase-modal-header">
         <div className="purchase-header-copy">
-          {closeButton}
           <div className="purchase-header-text">
             <h1>{t.newPurchaseTitle}</h1>
           </div>

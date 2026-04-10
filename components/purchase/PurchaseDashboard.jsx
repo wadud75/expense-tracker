@@ -241,9 +241,6 @@ export default function PurchaseDashboard() {
           <p>{subtitle}</p>
         </div>
         <div className="section-actions">
-          <button type="button" className="outline-button">
-            <span>{t.return}</span>
-          </button>
           <Link href="/purchase/new" className="primary-button">
             <PlusIcon />
             <span>{t.addPurchase}</span>
