@@ -31,12 +31,16 @@ function groupSalesInvoices(rows) {
           customerName: sale.customerName || "Walk-in customer",
           total: Number(sale.invoiceTotal ?? sale.lineTotal ?? 0),
           paidAmount: Number(sale.paidAmount ?? sale.invoiceTotal ?? sale.lineTotal ?? 0),
+          costTotal: 0,
+          profitAmount: 0,
           quantity: 0,
           createdAt: sale.createdAt,
         };
       }
 
       summary[key].quantity += Number(sale.quantity || 0);
+      summary[key].costTotal += Number(sale.costTotal || 0);
+      summary[key].profitAmount += Number(sale.profitAmount || 0);
       return summary;
     }, {}),
   );

@@ -158,6 +158,10 @@ function PurchaseFormContent({ modal, t, router }) {
         throw new Error(result.error || "Failed to save purchase.");
       }
 
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("purchase:created"));
+      }
+
       if (modal) {
         router.back();
         router.refresh();

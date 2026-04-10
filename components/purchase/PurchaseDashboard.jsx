@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import usePurchaseLanguage from "@/components/purchase/usePurchaseLanguage";
 import { purchaseIcons } from "@/components/purchase/purchaseContent";
 
@@ -110,33 +110,33 @@ export default function PurchaseDashboard() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 
+  const loadPurchases = useCallback(async () => {
+    try {
+      const response = await fetch("/api/purchases", { cache: "no-store" });
+      const result = await response.json();
+      setPurchases(result.purchases || []);
+    } catch {
+      setPurchases([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
-    let isMounted = true;
+    loadPurchases();
+  }, [loadPurchases]);
 
-    async function loadPurchases() {
-      try {
-        const response = await fetch("/api/purchases", { cache: "no-store" });
-        const result = await response.json();
-
-        if (isMounted) {
-          setPurchases(result.purchases || []);
-        }
-      } catch {
-        if (isMounted) {
-          setPurchases([]);
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
-      }
+  useEffect(() => {
+    function handlePurchaseCreated() {
+      setIsLoading(true);
+      loadPurchases();
     }
 
-    loadPurchases();
+    window.addEventListener("purchase:created", handlePurchaseCreated);
     return () => {
-      isMounted = false;
+      window.removeEventListener("purchase:created", handlePurchaseCreated);
     };
-  }, []);
+  }, [loadPurchases]);
 
   const sortedPurchases = useMemo(() => {
     return [...purchases].sort(

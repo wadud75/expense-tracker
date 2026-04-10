@@ -29,6 +29,49 @@ function getCartItemMeta(product) {
   return product.categoryName || "General product";
 }
 
+function roundCurrency(value) {
+  return Math.round((Number(value) || 0) * 100) / 100;
+}
+
+function buildCheckoutLines(cart, profitAmount) {
+  const normalizedProfitAmount = profitAmount.trim();
+
+  if (!normalizedProfitAmount) {
+    return cart.map((item) => ({
+      ...item,
+      saleLineTotal: item.lineTotal,
+      saleUnitPrice: item.quantity > 0 ? item.lineTotal / item.quantity : item.unitPrice,
+    }));
+  }
+
+  const baseSubtotal = cart.reduce((sum, item) => sum + item.lineTotal, 0);
+  const targetProfit = Math.max(Number(normalizedProfitAmount) || 0, 0);
+  const targetTotal = baseSubtotal + targetProfit;
+  const totalUnits = cart.reduce((sum, item) => sum + item.quantity, 0);
+  let remainingTotal = roundCurrency(targetTotal);
+
+  return cart.map((item, index) => {
+    const isLastItem = index === cart.length - 1;
+    let saleLineTotal = 0;
+
+    if (isLastItem) {
+      saleLineTotal = remainingTotal;
+    } else if (baseSubtotal > 0) {
+      saleLineTotal = roundCurrency((targetTotal * item.lineTotal) / baseSubtotal);
+      remainingTotal = roundCurrency(remainingTotal - saleLineTotal);
+    } else if (totalUnits > 0) {
+      saleLineTotal = roundCurrency((targetTotal * item.quantity) / totalUnits);
+      remainingTotal = roundCurrency(remainingTotal - saleLineTotal);
+    }
+
+    return {
+      ...item,
+      saleLineTotal,
+      saleUnitPrice: item.quantity > 0 ? saleLineTotal / item.quantity : 0,
+    };
+  });
+}
+
 function ChevronDownIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -49,6 +92,7 @@ export default function SalesPosPage() {
   const [sellerName, setSellerName] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("Cash");
   const [paidAmount, setPaidAmount] = useState("");
+  const [profitAmount, setProfitAmount] = useState("");
   const [warrantyMonths, setWarrantyMonths] = useState("0");
   const [note, setNote] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -154,20 +198,23 @@ export default function SalesPosPage() {
   }, [cart]);
 
   const cartSummary = useMemo(() => {
-    return cart.reduce(
+    const checkoutLines = buildCheckoutLines(cart, profitAmount);
+
+    return checkoutLines.reduce(
       (summary, item) => {
         summary.lines += 1;
         summary.units += item.quantity;
-        summary.subtotal += item.lineTotal;
+        summary.subtotal += item.saleLineTotal;
         return summary;
       },
-      { lines: 0, units: 0, subtotal: 0 },
+      { lines: 0, units: 0, subtotal: 0, checkoutLines },
     );
-  }, [cart]);
+  }, [cart, profitAmount]);
 
   const paidValue = Math.max(Number(paidAmount) || 0, 0);
-  const balance = Math.max(cartSummary.subtotal - paidValue, 0);
-  const paidDisplayValue = paidValue.toFixed(2);
+  const payableAmount = Math.min(paidValue, cartSummary.subtotal);
+  const balance = Math.max(cartSummary.subtotal - payableAmount, 0);
+  const paidDisplayValue = payableAmount.toFixed(2);
 
   function addToCart(product) {
     setErrorMessage("");
@@ -261,13 +308,15 @@ export default function SalesPosPage() {
           customerAddress,
           sellerName,
           paymentMethod,
-          paidAmount: paidValue,
+          paidAmount: payableAmount,
+          invoiceTotal: subtotal,
           warrantyMonths: Number(warrantyMonths) || 0,
           note,
-          items: cart.map((item) => ({
+          items: cartSummary.checkoutLines.map((item) => ({
             productId: item.id,
             quantity: item.quantity,
-            unitPrice: item.unitPrice,
+            unitPrice: item.saleUnitPrice,
+            lineTotal: Number(item.saleLineTotal.toFixed(2)),
           })),
         }),
       });
@@ -295,6 +344,7 @@ export default function SalesPosPage() {
       setSellerName("");
       setPaymentMethod("Cash");
       setPaidAmount("");
+      setProfitAmount("");
       setWarrantyMonths("0");
       setNote("");
       setSuccessMessage(`Sale completed. Invoice ${result.invoiceNo} created.`);
@@ -515,72 +565,100 @@ export default function SalesPosPage() {
               />
             </label>
 
-            <div className="sales-checkout-grid sales-checkout-grid-four">
-              <label className="purchase-field-stack">
-                <span>Seller name</span>
-                <div className="purchase-select-wrap">
-                  <select
-                    className="purchase-input purchase-select purchase-select-input sales-select-input"
-                    value={sellerName}
-                    onChange={(event) => setSellerName(event.target.value)}
-                  >
-                    <option value="">Select seller</option>
-                    {masterData.seller.map((option) => (
-                      <option key={option.id} value={option.name}>
-                        {option.name}
-                      </option>
-                    ))}
-                  </select>
-                  <span className="purchase-select-arrow" aria-hidden="true">
-                    <ChevronDownIcon />
-                  </span>
+            <div className="sales-checkout-card-grid">
+              <section className="sales-checkout-card">
+                <div className="sales-checkout-grid sales-checkout-grid-two">
+                  <label className="purchase-field-stack sales-field-stack">
+                    <span>Seller name</span>
+                    <div className="purchase-select-wrap">
+                      <select
+                        className="purchase-input purchase-select purchase-select-input sales-select-input sales-input-strong"
+                        value={sellerName}
+                        onChange={(event) => setSellerName(event.target.value)}
+                      >
+                        <option value="">Select seller</option>
+                        {masterData.seller.map((option) => (
+                          <option key={option.id} value={option.name}>
+                            {option.name}
+                          </option>
+                        ))}
+                      </select>
+                      <span className="purchase-select-arrow" aria-hidden="true">
+                        <ChevronDownIcon />
+                      </span>
+                    </div>
+                  </label>
+
+                  <label className="purchase-field-stack sales-field-stack">
+                    <span>Payment method</span>
+                    <div className="purchase-select-wrap">
+                      <select
+                        className="purchase-input purchase-select purchase-select-input sales-select-input sales-input-strong"
+                        value={paymentMethod}
+                        onChange={(event) => setPaymentMethod(event.target.value)}
+                      >
+                        <option value="Cash">Cash</option>
+                        <option value="Bkash">Bkash</option>
+                        <option value="Card">Card</option>
+                        <option value="Bank">Bank</option>
+                      </select>
+                      <span className="purchase-select-arrow" aria-hidden="true">
+                        <ChevronDownIcon />
+                      </span>
+                    </div>
+                  </label>
+
+                  <label className="purchase-field-stack sales-field-stack">
+                    <span>Paid amount</span>
+                    <input
+                      className="purchase-input sales-input-strong"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      placeholder={cart.length ? cartSummary.subtotal.toFixed(2) : "0.00"}
+                      value={paidAmount}
+                      onChange={(event) => setPaidAmount(event.target.value)}
+                    />
+                  </label>
+
+                  <label className="purchase-field-stack sales-field-stack">
+                    <span>Warranty months</span>
+                    <input
+                      className="purchase-input sales-input-strong"
+                      type="number"
+                      min="0"
+                      step="1"
+                      placeholder="0"
+                      value={warrantyMonths}
+                      onChange={(event) => setWarrantyMonths(event.target.value)}
+                    />
+                  </label>
+
+                  <label className="purchase-field-stack sales-field-stack">
+                    <span>Profit</span>
+                    <input
+                      className="purchase-input sales-input-strong"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      placeholder="0.00"
+                      value={profitAmount}
+                      onChange={(event) => setProfitAmount(event.target.value)}
+                    />
+                  </label>
                 </div>
-              </label>
 
-              <label className="purchase-field-stack">
-                <span>Payment method</span>
-                <div className="purchase-select-wrap">
-                  <select
-                    className="purchase-input purchase-select purchase-select-input sales-select-input"
-                    value={paymentMethod}
-                    onChange={(event) => setPaymentMethod(event.target.value)}
-                  >
-                    <option value="Cash">Cash</option>
-                    <option value="Bkash">Bkash</option>
-                    <option value="Card">Card</option>
-                    <option value="Bank">Bank</option>
-                  </select>
-                  <span className="purchase-select-arrow" aria-hidden="true">
-                    <ChevronDownIcon />
-                  </span>
+                <div className="sales-checkout-metrics">
+                  <div className="sales-checkout-metric">
+                    <span>Sale total</span>
+                    <strong>{formatCurrency(cartSummary.subtotal)}</strong>
+                  </div>
+                  <div className="sales-checkout-metric">
+                    <span>Due</span>
+                    <strong>{formatCurrency(balance)}</strong>
+                  </div>
                 </div>
-              </label>
-
-              <label className="purchase-field-stack">
-                <span>Paid amount</span>
-                <input
-                  className="purchase-input"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  placeholder="0.00"
-                  value={paidAmount}
-                  onChange={(event) => setPaidAmount(event.target.value)}
-                />
-              </label>
-
-              <label className="purchase-field-stack">
-                <span>Warranty months</span>
-                <input
-                  className="purchase-input"
-                  type="number"
-                  min="0"
-                  step="1"
-                  placeholder="0"
-                  value={warrantyMonths}
-                  onChange={(event) => setWarrantyMonths(event.target.value)}
-                />
-              </label>
+              </section>
             </div>
 
             <label className="purchase-field-stack">
@@ -596,7 +674,7 @@ export default function SalesPosPage() {
 
           <div className="sales-cart-list">
             {cart.length ? (
-              cart.map((item) => (
+              cartSummary.checkoutLines.map((item) => (
                 <article key={item.id} className="sales-cart-item-card">
                   <div className="sales-cart-item-top">
                     <div className="sales-cart-item-copy">
@@ -613,7 +691,7 @@ export default function SalesPosPage() {
                   </div>
 
                   <div className="sales-cart-item-meta">
-                    <span>{formatCurrency(item.unitPrice)} each</span>
+                    <span>{formatCurrency(item.saleUnitPrice)} each</span>
                     <span>{item.currentStock} available</span>
                   </div>
 
@@ -630,7 +708,7 @@ export default function SalesPosPage() {
 
                     <div className="sales-cart-line-total">
                       <span>Line total</span>
-                      <strong>{formatCurrency(item.lineTotal)}</strong>
+                      <strong>{formatCurrency(item.saleLineTotal)}</strong>
                     </div>
                   </div>
                 </article>

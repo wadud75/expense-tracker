@@ -43,7 +43,7 @@ const HOME_TEXT = {
   en: {
     overviewKicker: "Overview Dashboard",
     overviewTitle: "Business Overview",
-    overviewSubtitle: "A quick picture of purchases, sales, cash, customers, suppliers, stock, and dues.",
+    overviewSubtitle: "Track sales, realized profit, collections, stock value, customers, and dues in one place.",
     awaitingData: "Awaiting data",
     noRecentActivity: "No recent activity",
     quickAccess: "Quick Access",
@@ -67,11 +67,11 @@ const HOME_TEXT = {
     noRangeActivityText: "Try a wider filter like 30 days or lifetime.",
     updatedPrefix: "Updated",
     cards: {
-      purchase: "Today's Purchase",
-      sales: "Today's Sales",
-      profit: "Today's Profit",
-      deposit: "Today's Collection",
-      expense: "Today's Expense",
+      purchase: "Purchase Value",
+      sales: "Sales Value",
+      profit: "Realized Profit",
+      deposit: "Collection",
+      expense: "Purchase Payments",
       customers: "Total Customers",
       suppliers: "Total Suppliers",
       receivable: "Receivable Due",
@@ -82,7 +82,7 @@ const HOME_TEXT = {
     subtitles: {
       purchaseEntries: (count) => `${count} entries`,
       salesEntries: (count, units) => `${count} sales • units ${units}`,
-      profit: "Sales value - purchase value",
+      profit: "Realized only from completed sales",
       deposit: "Without manual deposits",
       expense: "Without manual expenses",
       activeCustomers: (count) => `${count} active customers`,
@@ -96,7 +96,7 @@ const HOME_TEXT = {
   bn: {
     overviewKicker: "অভারভিউ ড্যাশবোর্ড",
     overviewTitle: "ব্যবসার সারসংক্ষেপ",
-    overviewSubtitle: "আজকের ক্রয়, বিক্রি, ক্যাশ, কাস্টমার, সাপ্লায়ার, স্টক এবং বকেয়ার দ্রুত ছবি।",
+    overviewSubtitle: "বিক্রি, বাস্তব প্রফিট, আদায়, স্টক ভ্যালু, কাস্টমার এবং বকেয়ার সংক্ষিপ্ত চিত্র।",
     awaitingData: "তথ্য আসছে",
     noRecentActivity: "সাম্প্রতিক কার্যক্রম নেই",
     quickAccess: "দ্রুত প্রবেশ",
@@ -120,11 +120,11 @@ const HOME_TEXT = {
     noRangeActivityText: "৩০ দিন বা লাইফটাইম ফিল্টার ব্যবহার করে দেখুন।",
     updatedPrefix: "আপডেট",
     cards: {
-      purchase: "আজকের ক্রয়",
-      sales: "আজকের বিক্রি",
-      profit: "আজকের প্রফিট",
-      deposit: "আজকের জমা",
-      expense: "আজকের খরচ",
+      purchase: "ক্রয়ের মূল্য",
+      sales: "বিক্রির মূল্য",
+      profit: "বাস্তব প্রফিট",
+      deposit: "আদায়",
+      expense: "ক্রয় পরিশোধ",
       customers: "মোট কাস্টমার",
       suppliers: "মোট সাপ্লায়ার",
       receivable: "বকেয়া আদায়যোগ্য",
@@ -135,7 +135,7 @@ const HOME_TEXT = {
     subtitles: {
       purchaseEntries: (count) => `${count} টি এন্ট্রি`,
       salesEntries: (count, units) => `${count} টি বিক্রয় • পণ্য ${units}`,
-      profit: "বিক্রয় মূল্য - ক্রয় মূল্য",
+      profit: "শুধু সম্পন্ন বিক্রয় থেকে হিসাব করা হয়েছে",
       deposit: "ম্যানুয়াল জমা ছাড়া",
       expense: "ম্যানুয়াল খরচ যুক্ত নয়",
       activeCustomers: (count) => `${count} জন সক্রিয়`,
@@ -292,6 +292,7 @@ export default function HomeOverviewClient(props) {
     const purchaseAmount = filteredPurchases.reduce((total, item) => total + Number(item.totalAmount || 0), 0);
     const expenseAmount = filteredPurchases.reduce((total, item) => total + Number(item.paymentAmount || 0), 0);
     const salesAmount = filteredInvoices.reduce((total, item) => total + Number(item.total || 0), 0);
+    const profitAmount = filteredInvoices.reduce((total, item) => total + Number(item.profitAmount || 0), 0);
     const collectedAmount = filteredInvoices.reduce((total, item) => total + Number(item.paidAmount || 0), 0);
     const unitsSold = filteredInvoices.reduce((total, item) => total + Number(item.quantity || 0), 0);
     const cashBalance = collectedAmount - expenseAmount;
@@ -316,7 +317,7 @@ export default function HomeOverviewClient(props) {
         },
         {
           title: copy.cards.profit,
-          value: formatCompactCurrency(salesAmount - purchaseAmount, language),
+          value: formatCompactCurrency(profitAmount, language),
           subtitle: copy.subtitles.profit,
           icon: ChartIcon,
           tone: "green",
