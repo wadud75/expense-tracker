@@ -1,5 +1,6 @@
 ﻿import { NextResponse } from "next/server";
 import { upsertProductFromPurchase } from "@/lib/inventory";
+import { calculatePurchaseTotal, createInvoiceNumber } from "@/lib/invoiceUtils";
 import clientPromise from "@/lib/mongodb";
 
 function normalizeNumber(value, fallback = 0) {
@@ -11,8 +12,10 @@ function buildPurchaseDocument(payload) {
   const quantity = normalizeNumber(payload.quantity, 1);
   const unitPrice = normalizeNumber(payload.unitPrice);
   const paymentAmount = normalizeNumber(payload.paymentAmount);
+  const invoiceTotal = calculatePurchaseTotal(quantity, unitPrice);
 
   return {
+    invoiceNo: createInvoiceNumber("PU"),
     supplierName: (payload.supplierName || "").trim(),
     productName: (payload.productName || "").trim(),
     brandName: (payload.brandName || "").trim(),
@@ -22,6 +25,7 @@ function buildPurchaseDocument(payload) {
     unitPrice,
     paymentMethod: (payload.paymentMethod || "").trim() || "Cash",
     paymentAmount,
+    invoiceTotal,
     notes: (payload.notes || "").trim(),
     imageUrl: payload.imageUrl || "",
     imageFileId: payload.imageFileId || "",
@@ -42,6 +46,7 @@ export async function GET() {
     return NextResponse.json({
       purchases: purchases.map((purchase) => ({
         id: purchase._id.toString(),
+        invoiceNo: purchase.invoiceNo || "",
         supplierName: purchase.supplierName,
         productName: purchase.productName,
         brandName: purchase.brandName || "",
@@ -51,8 +56,12 @@ export async function GET() {
         unitPrice: purchase.unitPrice ?? purchase.costPerUnit ?? 0,
         paymentMethod: purchase.paymentMethod || "Cash",
         paymentAmount: purchase.paymentAmount ?? purchase.paidAmount ?? 0,
+        invoiceTotal:
+          purchase.invoiceTotal ??
+          calculatePurchaseTotal(purchase.quantity, purchase.unitPrice ?? purchase.costPerUnit),
         createdAt: purchase.createdAt,
         imageUrl: purchase.imageUrl || "",
+        notes: purchase.notes || "",
       })),
     });
   } catch (error) {
@@ -81,6 +90,7 @@ export async function POST(request) {
 
     return NextResponse.json({
       id: result.insertedId.toString(),
+      invoiceNo: purchase.invoiceNo,
       purchase: {
         ...purchase,
         id: result.insertedId.toString(),

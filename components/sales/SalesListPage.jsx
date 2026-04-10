@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import InvoicePreviewModal from "@/components/invoices/InvoicePreviewModal";
+import { downloadInvoicePdf } from "@/lib/invoicePrint";
 import BoxIcon from "@/components/svgs/BoxIcon";
 import CalendarIcon from "@/components/svgs/CalendarIcon";
 import ReceiptIcon from "@/components/svgs/ReceiptIcon";
@@ -48,6 +50,41 @@ function getSaleDue(sale) {
   return Math.max((Number(sale.invoiceTotal) || 0) - (Number(sale.paidAmount) || 0), 0);
 }
 
+function buildSalesInvoice(group) {
+  const lines = group.sales || [];
+  const firstSale = lines[0] || {};
+
+  return {
+    title: "Sales Invoice",
+    heading: "Customer sales invoice",
+    subheading: "Checkout invoice with sold items and payment summary.",
+    invoiceNo: group.invoiceNo,
+    issuedAt: firstSale.createdAt,
+    totalAmount: Number(firstSale.invoiceTotal) || 0,
+    paidAmount: Number(firstSale.paidAmount) || 0,
+    dueAmount: getSaleDue(firstSale),
+    note: firstSale.note || "",
+    meta: [
+      { label: "Customer", value: firstSale.customerName || "Walk-in customer" },
+      { label: "Address", value: firstSale.customerAddress || "-" },
+      { label: "Seller", value: firstSale.sellerName || "-" },
+      { label: "Payment Method", value: firstSale.paymentMethod || "Cash" },
+      {
+        label: "Warranty",
+        value: `${Number(firstSale.warrantyMonths || 0)} month${Number(firstSale.warrantyMonths || 0) === 1 ? "" : "s"}`,
+      },
+      { label: "Date", value: formatDate(firstSale.createdAt) },
+    ],
+    items: lines.map((sale) => ({
+      name: sale.productName || "-",
+      description: sale.note || "POS sale item",
+      quantity: Number(sale.quantity) || 0,
+      unitPrice: Number(sale.unitPrice) || 0,
+      lineTotal: Number(sale.lineTotal) || 0,
+    })),
+  };
+}
+
 export default function SalesListPage() {
   const [sales, setSales] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -55,6 +92,7 @@ export default function SalesListPage() {
   const [endDate, setEndDate] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
+  const [selectedInvoice, setSelectedInvoice] = useState(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -130,6 +168,18 @@ export default function SalesListPage() {
       return true;
     });
   }, [endDate, sales, searchTerm, startDate]);
+
+  const salesInvoiceMap = useMemo(() => {
+    return sales.reduce((summary, sale) => {
+      const key = sale.invoiceNo || sale.id;
+      if (!summary[key]) {
+        summary[key] = { invoiceNo: key, sales: [] };
+      }
+
+      summary[key].sales.push(sale);
+      return summary;
+    }, {});
+  }, [sales]);
 
   const summary = useMemo(() => {
     const invoices = new Set(filteredSales.map((sale) => sale.invoiceNo).filter(Boolean));
@@ -241,6 +291,7 @@ export default function SalesListPage() {
             <span>Due</span>
             <span>Payment</span>
             <span>Note</span>
+            <span>Action</span>
           </div>
 
           {isLoading ? (
@@ -261,6 +312,30 @@ export default function SalesListPage() {
                 <span>{formatCurrency(getSaleDue(sale))}</span>
                 <span>{sale.paymentMethod || "Cash"}</span>
                 <span className="sales-register-text">{sale.note || "No note added"}</span>
+                <span className="sales-action-group">
+                  <button
+                    type="button"
+                    className="sales-action-button sales-action-button-preview"
+                    onClick={() =>
+                      setSelectedInvoice(buildSalesInvoice(salesInvoiceMap[sale.invoiceNo || sale.id]))
+                    }
+                  >
+                    Preview
+                  </button>
+                  <button
+                    type="button"
+                    className="sales-action-button sales-action-button-download"
+                    onClick={() => {
+                      try {
+                        downloadInvoicePdf(buildSalesInvoice(salesInvoiceMap[sale.invoiceNo || sale.id]));
+                      } catch (error) {
+                        setErrorMessage(error.message || "Failed to download the invoice PDF.");
+                      }
+                    }}
+                  >
+                    Download
+                  </button>
+                </span>
               </div>
             ))
           ) : (
@@ -322,10 +397,40 @@ export default function SalesListPage() {
                     <strong>{sale.note || "-"}</strong>
                   </div>
                 </div>
+                <div className="sales-action-group sales-mobile-action-row">
+                  <button
+                    type="button"
+                    className="sales-action-button sales-action-button-preview sales-mobile-action"
+                    onClick={() =>
+                      setSelectedInvoice(buildSalesInvoice(salesInvoiceMap[sale.invoiceNo || sale.id]))
+                    }
+                  >
+                    Preview
+                  </button>
+                  <button
+                    type="button"
+                    className="sales-action-button sales-action-button-download sales-mobile-action-secondary"
+                    onClick={() => {
+                      try {
+                        downloadInvoicePdf(buildSalesInvoice(salesInvoiceMap[sale.invoiceNo || sale.id]));
+                      } catch (error) {
+                        setErrorMessage(error.message || "Failed to download the invoice PDF.");
+                      }
+                    }}
+                  >
+                    Download
+                  </button>
+                </div>
               </article>
             ))}
           </div>
         ) : null}
+
+      <InvoicePreviewModal
+        invoice={selectedInvoice}
+        onClose={() => setSelectedInvoice(null)}
+        onError={setErrorMessage}
+      />
       </div>
     </section>
   );

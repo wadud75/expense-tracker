@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import InvoicePreviewModal from "@/components/invoices/InvoicePreviewModal";
 import usePurchaseLanguage from "@/components/purchase/usePurchaseLanguage";
 import { purchaseIcons } from "@/components/purchase/purchaseContent";
+import { downloadInvoicePdf } from "@/lib/invoicePrint";
 
 const { CalendarIcon, PlusIcon, SearchIcon } = purchaseIcons;
 const QUICK_FILTER_KEYS = ["today", "7days", "30days", "1year", "lifetime"];
@@ -19,6 +21,47 @@ function formatDate(value) {
 
 function formatAmount(value) {
   return (Number(value) || 0).toFixed(2);
+}
+
+function getPurchaseDue(purchase) {
+  return Math.max((Number(purchase.invoiceTotal) || 0) - (Number(purchase.paymentAmount) || 0), 0);
+}
+
+function buildPurchaseInvoice(purchase) {
+  const quantity = Number(purchase.quantity) || 0;
+  const unitPrice = Number(purchase.unitPrice) || 0;
+  const totalAmount = Number(purchase.invoiceTotal) || quantity * unitPrice;
+
+  return {
+    title: "Purchase Invoice",
+    heading: "Purchase transaction invoice",
+    subheading: "Supplier purchase record with payment summary.",
+    invoiceNo: purchase.invoiceNo || purchase.id,
+    issuedAt: purchase.createdAt,
+    totalAmount,
+    paidAmount: Number(purchase.paymentAmount) || 0,
+    dueAmount: getPurchaseDue(purchase),
+    note: purchase.notes || "",
+    meta: [
+      { label: "Supplier", value: purchase.supplierName || "-" },
+      { label: "Category", value: purchase.categoryName || "-" },
+      { label: "Payment Method", value: purchase.paymentMethod || "Cash" },
+      { label: "Brand", value: purchase.brandName || "-" },
+      { label: "Variant", value: purchase.variantName || "-" },
+      { label: "Date", value: formatDate(purchase.createdAt) },
+    ],
+    items: [
+      {
+        name: purchase.productName || "-",
+        description: [purchase.categoryName, purchase.brandName, purchase.variantName]
+          .filter(Boolean)
+          .join(" | "),
+        quantity,
+        unitPrice,
+        lineTotal: totalAmount,
+      },
+    ],
+  };
 }
 
 function getPurchaseTimestamp(value) {
@@ -109,13 +152,21 @@ export default function PurchaseDashboard() {
   const [activeQuickFilter, setActiveQuickFilter] = useState("lifetime");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [selectedInvoice, setSelectedInvoice] = useState(null);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const loadPurchases = useCallback(async () => {
     try {
       const response = await fetch("/api/purchases", { cache: "no-store" });
       const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.error || "Failed to load purchases.");
+      }
+
+      setErrorMessage("");
       setPurchases(result.purchases || []);
-    } catch {
+    } catch (error) {
+      setErrorMessage(error.message || "Failed to load purchases.");
       setPurchases([]);
     } finally {
       setIsLoading(false);
@@ -309,33 +360,66 @@ export default function PurchaseDashboard() {
         </div>
       </div>
 
-      <div className="table-card">
-        <div className="table-head">
-          {t.tableHeaders.map((header) => (
-            <span key={header}>{header}</span>
-          ))}
-        </div>
+      {errorMessage ? <p className="purchase-feedback purchase-feedback-error">{errorMessage}</p> : null}
 
-        {isLoading ? (
-          <div className="table-empty">Loading...</div>
-        ) : filteredPurchases.length ? (
-          filteredPurchases.map((purchase) => (
-            <div key={purchase.id} className="table-row">
-              <span>{formatDate(purchase.createdAt)}</span>
-              <span>{purchase.supplierName || "-"}</span>
-              <span>{purchase.productName || "-"}</span>
-              <span>{purchase.brandName || "-"}</span>
-              <span>{purchase.variantName || "-"}</span>
-              <span>{purchase.categoryName || "-"}</span>
-              <span>{purchase.quantity || 0}</span>
-              <span>{formatAmount(purchase.unitPrice)}</span>
-              <span>{formatAmount(purchase.paymentAmount)}</span>
-            </div>
-          ))
-        ) : (
-          <div className="table-empty">{t.tableEmpty}</div>
-        )}
+      <div className="table-card">
+        <div className="purchase-table-scroll">
+          <div className="table-head purchase-table-head">
+            {t.tableHeaders.map((header) => (
+              <span key={header}>{header}</span>
+            ))}
+          </div>
+
+          {isLoading ? (
+            <div className="table-empty">Loading...</div>
+          ) : filteredPurchases.length ? (
+            filteredPurchases.map((purchase) => (
+              <div key={purchase.id} className="table-row purchase-table-row">
+                <span>{formatDate(purchase.createdAt)}</span>
+                <span>{purchase.invoiceNo || "-"}</span>
+                <span>{purchase.supplierName || "-"}</span>
+                <span>{purchase.productName || "-"}</span>
+                <span>{purchase.brandName || "-"}</span>
+                <span>{purchase.variantName || "-"}</span>
+                <span>{purchase.categoryName || "-"}</span>
+                <span>{purchase.quantity || 0}</span>
+                <span>{formatAmount(purchase.unitPrice)}</span>
+                <span>{formatAmount(purchase.paymentAmount)}</span>
+                <span className="table-action-group">
+                  <button
+                    type="button"
+                    className="table-action-button"
+                    onClick={() => setSelectedInvoice(buildPurchaseInvoice(purchase))}
+                  >
+                    Preview
+                  </button>
+                  <button
+                    type="button"
+                    className="table-action-button table-action-button-secondary"
+                    onClick={() => {
+                      try {
+                        downloadInvoicePdf(buildPurchaseInvoice(purchase));
+                      } catch (error) {
+                        setErrorMessage(error.message || "Failed to download the invoice PDF.");
+                      }
+                    }}
+                  >
+                    Download
+                  </button>
+                </span>
+              </div>
+            ))
+          ) : (
+            <div className="table-empty">{t.tableEmpty}</div>
+          )}
+        </div>
       </div>
+
+      <InvoicePreviewModal
+        invoice={selectedInvoice}
+        onClose={() => setSelectedInvoice(null)}
+        onError={setErrorMessage}
+      />
     </section>
   );
 }
