@@ -10,7 +10,7 @@ import {
 } from "@/components/purchase/purchaseContent";
 
 export default function usePurchaseLanguage() {
-  const [language, setLanguage] = useState(detectLanguage);
+  const [language, setLanguage] = useState("en");
 
   const t = translations[language];
   const locale = language === "bn" ? "bn-BD" : "en-US";
@@ -23,6 +23,10 @@ export default function usePurchaseLanguage() {
     title: t.statCards[index],
     formattedValue: new Intl.NumberFormat(locale).format(card.value),
   }));
+
+  useEffect(() => {
+    setLanguage(detectLanguage());
+  }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") {

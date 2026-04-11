@@ -87,16 +87,8 @@ function isMenuItemActive(key, href, pathname) {
 export default function PurchaseShell({ children }) {
   const pathname = usePathname();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [theme, setTheme] = useState(() => {
-    if (typeof window === "undefined") {
-      return "light";
-    }
-
-    return (
-      window.localStorage.getItem(THEME_STORAGE_KEY) ||
-      (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light")
-    );
-  });
+  const [theme, setTheme] = useState("light");
+  const [isThemeReady, setIsThemeReady] = useState(false);
   const { language, setLanguage, t, menuItems } = usePurchaseLanguage();
 
   useEffect(() => {
@@ -118,10 +110,15 @@ export default function PurchaseShell({ children }) {
   }, [isSidebarOpen]);
 
   useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
+    const savedTheme = window.localStorage.getItem(THEME_STORAGE_KEY);
+    const nextTheme =
+      savedTheme || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
 
+    setTheme(nextTheme);
+    setIsThemeReady(true);
+  }, []);
+
+  useEffect(() => {
     document.documentElement.dataset.theme = theme;
     window.localStorage.setItem(THEME_STORAGE_KEY, theme);
   }, [theme]);
@@ -210,10 +207,25 @@ export default function PurchaseShell({ children }) {
               type="button"
               className="pill-button theme-toggle-button"
               onClick={() => setTheme((currentValue) => (currentValue === "dark" ? "light" : "dark"))}
-              aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+              aria-label={
+                isThemeReady
+                  ? theme === "dark"
+                    ? "Switch to light mode"
+                    : "Switch to dark mode"
+                  : "Toggle theme"
+              }
             >
-              {theme === "dark" ? <SunIcon /> : <MoonIcon />}
-              <span>{theme === "dark" ? "Light" : "Dark"}</span>
+              {isThemeReady ? (
+                <>
+                  {theme === "dark" ? <SunIcon /> : <MoonIcon />}
+                  <span>{theme === "dark" ? "Light" : "Dark"}</span>
+                </>
+              ) : (
+                <>
+                  <span aria-hidden="true" style={{ width: 16, height: 16, display: "inline-block" }} />
+                  <span>Theme</span>
+                </>
+              )}
             </button>
             <button
               type="button"

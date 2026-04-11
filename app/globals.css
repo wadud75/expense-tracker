@@ -1265,17 +1265,19 @@ html[data-theme="dark"] .home-dashboard {
 
 @media (max-width: 767px) {
   .topbar {
-    align-items: flex-start;
-    flex-direction: column;
+    align-items: center;
+    flex-direction: row;
   }
 
   .topbar-left,
   .topbar-actions {
-    width: 100%;
+    width: auto;
   }
 
   .topbar-actions {
-    justify-content: flex-start;
+    margin-left: auto;
+    justify-content: flex-end;
+    gap: 8px;
   }
 
   .pill-button {
@@ -9544,6 +9546,7 @@ html[data-theme="dark"] .product-catalog-panel,
 html[data-theme="dark"] .product-mobile-card,
 html[data-theme="dark"] .product-modal-card,
 html[data-theme="dark"] .sales-summary-card,
+html[data-theme="dark"] .sales-catalog-shell,
 html[data-theme="dark"] .sales-product-card,
 html[data-theme="dark"] .sales-cart-shell,
 html[data-theme="dark"] .sales-cart-item-card,
@@ -9571,6 +9574,73 @@ html[data-theme="dark"] .customer-pro-mobile-card {
 
 html[data-theme="dark"] .sidebar {
   background: linear-gradient(180deg, #0d1728 0%, #101b2f 100%) !important;
+}
+
+html[data-theme="dark"] .brand-mark,
+html[data-theme="dark"] .sidebar-close,
+html[data-theme="dark"] .sidebar-card-icon {
+  background: rgba(15, 23, 42, 0.72) !important;
+  border-color: rgba(71, 85, 105, 0.4) !important;
+  box-shadow: 0 10px 24px rgba(2, 8, 23, 0.3) !important;
+}
+
+html[data-theme="dark"] .sidebar-close,
+html[data-theme="dark"] .sidebar-card-icon,
+html[data-theme="dark"] .topbar-alert {
+  color: #cbd5e1 !important;
+}
+
+html[data-theme="dark"] .sidebar-card {
+  color: #e2e8f0 !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03), 0 12px 24px rgba(2, 8, 23, 0.26) !important;
+}
+
+html[data-theme="dark"] .sidebar-card:hover {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 14px 28px rgba(2, 8, 23, 0.32) !important;
+}
+
+html[data-theme="dark"] .sidebar-card-active {
+  border-color: rgba(45, 212, 191, 0.46) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 0 0 1px rgba(45, 212, 191, 0.18),
+    0 16px 30px rgba(2, 8, 23, 0.34) !important;
+}
+
+html[data-theme="dark"] .sidebar-card-sky {
+  background: linear-gradient(180deg, rgba(14, 65, 92, 0.92), rgba(15, 23, 42, 0.98)) !important;
+}
+
+html[data-theme="dark"] .sidebar-card-mint {
+  background: linear-gradient(180deg, rgba(8, 86, 74, 0.92), rgba(15, 23, 42, 0.98)) !important;
+}
+
+html[data-theme="dark"] .sidebar-card-violet {
+  background: linear-gradient(180deg, rgba(67, 56, 202, 0.26), rgba(15, 23, 42, 0.98)) !important;
+}
+
+html[data-theme="dark"] .sidebar-card-blue {
+  background: linear-gradient(180deg, rgba(30, 64, 175, 0.28), rgba(15, 23, 42, 0.98)) !important;
+}
+
+html[data-theme="dark"] .sidebar-card-amber {
+  background: linear-gradient(180deg, rgba(146, 64, 14, 0.3), rgba(15, 23, 42, 0.98)) !important;
+}
+
+html[data-theme="dark"] .sidebar-card-slate {
+  background: linear-gradient(180deg, rgba(51, 65, 85, 0.5), rgba(15, 23, 42, 0.98)) !important;
+}
+
+html[data-theme="dark"] .sidebar-card-rose {
+  background: linear-gradient(180deg, rgba(159, 18, 57, 0.28), rgba(15, 23, 42, 0.98)) !important;
+}
+
+html[data-theme="dark"] .sidebar-card-green {
+  background: linear-gradient(180deg, rgba(21, 128, 61, 0.26), rgba(15, 23, 42, 0.98)) !important;
+}
+
+html[data-theme="dark"] .sidebar-card-pink {
+  background: linear-gradient(180deg, rgba(157, 23, 77, 0.26), rgba(15, 23, 42, 0.98)) !important;
 }
 
 html[data-theme="dark"] .search-field,
@@ -9638,12 +9708,6 @@ html[data-theme="dark"] .warranty-pro-table-head {
 }
 
 html[data-theme="dark"] .brand-row h1,
-html[data-theme="dark"] .section-heading h2,
-html[data-theme="dark"] .section-heading h3,
-html[data-theme="dark"] h1,
-html[data-theme="dark"] h2,
-html[data-theme="dark"] h3,
-html[data-theme="dark"] strong,
 html[data-theme="dark"] .table-row,
 html[data-theme="dark"] .product-table-row,
 html[data-theme="dark"] .sales-register-row,
@@ -9655,13 +9719,53 @@ html[data-theme="dark"] .warranty-pro-row {
   color: #e2e8f0 !important;
 }
 
-html[data-theme="dark"] p,
-html[data-theme="dark"] small,
-html[data-theme="dark"] span,
-html[data-theme="dark"] label,
 html[data-theme="dark"] .brand-copy p,
-html[data-theme="dark"] .table-empty {
+html[data-theme="dark"] .table-empty,
+html[data-theme="dark"] .purchase-field-stack span,
+html[data-theme="dark"] .stock-field-stack span,
+html[data-theme="dark"] .stock-panel-copy,
+html[data-theme="dark"] .product-mobile-head p,
+html[data-theme="dark"] .sales-summary-card span,
+html[data-theme="dark"] .sales-summary-card p,
+html[data-theme="dark"] .due-summary-card span,
+html[data-theme="dark"] .due-summary-card p,
+html[data-theme="dark"] .due-side-head p,
+html[data-theme="dark"] .due-focus-copy p,
+html[data-theme="dark"] .due-party-block p,
+html[data-theme="dark"] .due-mobile-head p,
+html[data-theme="dark"] .due-mobile-details span,
+html[data-theme="dark"] .warranty-summary-card span,
+html[data-theme="dark"] .warranty-summary-card p,
+html[data-theme="dark"] .product-summary-copy span,
+html[data-theme="dark"] .product-summary-copy p,
+html[data-theme="dark"] .invoice-sheet-number span,
+html[data-theme="dark"] .invoice-sheet-number p,
+html[data-theme="dark"] .invoice-meta-card span,
+html[data-theme="dark"] .invoice-note-card p,
+html[data-theme="dark"] .invoice-line-row p {
   color: #94a3b8;
+}
+
+html[data-theme="dark"] .section-heading h2,
+html[data-theme="dark"] .section-heading h3,
+html[data-theme="dark"] .stock-panel-head h3,
+html[data-theme="dark"] .stock-overview-card strong,
+html[data-theme="dark"] .product-summary-card strong,
+html[data-theme="dark"] .product-mobile-head strong,
+html[data-theme="dark"] .sales-summary-card strong,
+html[data-theme="dark"] .due-summary-card strong,
+html[data-theme="dark"] .due-side-head h3,
+html[data-theme="dark"] .due-party-block strong,
+html[data-theme="dark"] .due-mobile-head strong,
+html[data-theme="dark"] .due-mobile-details strong,
+html[data-theme="dark"] .due-focus-copy strong,
+html[data-theme="dark"] .due-focus-meta strong,
+html[data-theme="dark"] .warranty-summary-card strong,
+html[data-theme="dark"] .invoice-sheet-head h2,
+html[data-theme="dark"] .invoice-meta-card strong,
+html[data-theme="dark"] .invoice-summary-card strong,
+html[data-theme="dark"] .invoice-line-row strong {
+  color: #e2e8f0 !important;
 }
 
 html[data-theme="dark"] .home-overview-card-mint,
@@ -9678,4 +9782,424 @@ html[data-theme="dark"] .home-overview-card-coral,
 html[data-theme="dark"] .home-summary-card-dark,
 html[data-theme="dark"] .home-hero {
   background: #111c2e !important;
+}
+
+html[data-theme="dark"] .due-mobile-details div,
+html[data-theme="dark"] .due-focus-item {
+  background: #162235 !important;
+  border-color: rgba(71, 85, 105, 0.45) !important;
+}
+
+html[data-theme="dark"] .admin-card,
+html[data-theme="dark"] .admin-loading,
+html[data-theme="dark"] .purchase-item-card,
+html[data-theme="dark"] .sales-register-card,
+html[data-theme="dark"] .sales-checkout-card,
+html[data-theme="dark"] .sales-cart-summary,
+html[data-theme="dark"] .sales-empty-state,
+html[data-theme="dark"] .stock-table-card,
+html[data-theme="dark"] .warranty-table-card,
+html[data-theme="dark"] .warranty-side-card,
+html[data-theme="dark"] .warranty-mobile-card,
+html[data-theme="dark"] .warranty-focus-item,
+html[data-theme="dark"] .warranty-customer-card,
+html[data-theme="dark"] .customer-pro-top-card,
+html[data-theme="dark"] .customer-pro-note-card,
+html[data-theme="dark"] .customer-pro-spotlight,
+html[data-theme="dark"] .customer-pro-priority-item,
+html[data-theme="dark"] .customer-pro-priority-tile,
+html[data-theme="dark"] .customer-pro-priority-stats div,
+html[data-theme="dark"] .customer-pro-meta-grid div,
+html[data-theme="dark"] .customer-pro-mobile-grid-inner div,
+html[data-theme="dark"] .customer-pro-empty-state,
+html[data-theme="dark"] .stock-mobile-cell {
+  background: #111c2e !important;
+  border-color: rgba(71, 85, 105, 0.45) !important;
+  box-shadow: 0 18px 34px rgba(2, 8, 23, 0.24) !important;
+}
+
+html[data-theme="dark"] .admin-card-head h3,
+html[data-theme="dark"] .purchase-panel-head h2,
+html[data-theme="dark"] .purchase-modal-header h1,
+html[data-theme="dark"] .purchase-table-row,
+html[data-theme="dark"] .purchase-table-row strong,
+html[data-theme="dark"] .sales-product-top strong,
+html[data-theme="dark"] .sales-cart-item-copy strong,
+html[data-theme="dark"] .sales-cart-head h3,
+html[data-theme="dark"] .sales-product-price,
+html[data-theme="dark"] .sales-summary-line strong,
+html[data-theme="dark"] .sales-checkout-metric strong,
+html[data-theme="dark"] .sales-register-block strong,
+html[data-theme="dark"] .sales-register-block-money strong,
+html[data-theme="dark"] .sales-register-text,
+html[data-theme="dark"] .stock-product-cell strong,
+html[data-theme="dark"] .stock-qty-cell strong,
+html[data-theme="dark"] .stock-mobile-cell strong,
+html[data-theme="dark"] .warranty-table-intro h3,
+html[data-theme="dark"] .warranty-side-head h3,
+html[data-theme="dark"] .warranty-focus-copy strong,
+html[data-theme="dark"] .warranty-customer-card strong,
+html[data-theme="dark"] .customer-pro-panel-head h3,
+html[data-theme="dark"] .customer-pro-panel-head > strong,
+html[data-theme="dark"] .customer-pro-cell strong,
+html[data-theme="dark"] .customer-pro-mobile-head strong,
+html[data-theme="dark"] .customer-pro-priority-tile-head strong,
+html[data-theme="dark"] .customer-pro-priority-stats strong,
+html[data-theme="dark"] .customer-modal-header h3 {
+  color: #e2e8f0 !important;
+}
+
+html[data-theme="dark"] .admin-card-head p,
+html[data-theme="dark"] .admin-empty,
+html[data-theme="dark"] .purchase-panel-head p,
+html[data-theme="dark"] .purchase-item-top,
+html[data-theme="dark"] .purchase-field-stack span,
+html[data-theme="dark"] .sales-product-top p,
+html[data-theme="dark"] .sales-cart-item-copy p,
+html[data-theme="dark"] .sales-product-bottom small,
+html[data-theme="dark"] .sales-cart-pill,
+html[data-theme="dark"] .sales-side-label,
+html[data-theme="dark"] .sales-summary-line span,
+html[data-theme="dark"] .sales-checkout-metric span,
+html[data-theme="dark"] .sales-register-block span,
+html[data-theme="dark"] .sales-register-text,
+html[data-theme="dark"] .stock-product-cell span,
+html[data-theme="dark"] .stock-mobile-label,
+html[data-theme="dark"] .warranty-table-intro p,
+html[data-theme="dark"] .warranty-focus-meta strong,
+html[data-theme="dark"] .warranty-customer-card p,
+html[data-theme="dark"] .customer-pro-top-card p,
+html[data-theme="dark"] .customer-pro-note-card p,
+html[data-theme="dark"] .customer-pro-spotlight p,
+html[data-theme="dark"] .customer-pro-priority-item p,
+html[data-theme="dark"] .customer-pro-priority-tile-head p,
+html[data-theme="dark"] .customer-pro-priority-stats span,
+html[data-theme="dark"] .customer-modal-header p {
+  color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .admin-input,
+html[data-theme="dark"] .admin-chip,
+html[data-theme="dark"] .purchase-item-pill,
+html[data-theme="dark"] .purchase-back,
+html[data-theme="dark"] .purchase-ghost-button,
+html[data-theme="dark"] .sales-stepper,
+html[data-theme="dark"] .sales-stepper button,
+html[data-theme="dark"] .sales-input-strong,
+html[data-theme="dark"] .warranty-date-input,
+html[data-theme="dark"] .customer-pro-delete-button {
+  background: #162235 !important;
+  border-color: rgba(71, 85, 105, 0.45) !important;
+  color: #e2e8f0 !important;
+}
+
+html[data-theme="dark"] .admin-card-icon,
+html[data-theme="dark"] .purchase-panel-icon,
+html[data-theme="dark"] .purchase-panel-icon-blue,
+html[data-theme="dark"] .sales-summary-icon,
+html[data-theme="dark"] .customer-pro-empty-icon {
+  background: rgba(30, 41, 59, 0.92) !important;
+  border-color: rgba(71, 85, 105, 0.45) !important;
+  box-shadow: none !important;
+}
+
+html[data-theme="dark"] .table-head,
+html[data-theme="dark"] .purchase-table-head,
+html[data-theme="dark"] .sales-register-head-horizontal,
+html[data-theme="dark"] .sales-register-head-split,
+html[data-theme="dark"] .warranty-table-head,
+html[data-theme="dark"] .customer-pro-table-head-clean {
+  background: #162235 !important;
+  color: #94a3b8 !important;
+  border-color: rgba(71, 85, 105, 0.45) !important;
+}
+
+html[data-theme="dark"] .purchase-table-row,
+html[data-theme="dark"] .sales-register-row-horizontal,
+html[data-theme="dark"] .sales-register-row-split,
+html[data-theme="dark"] .stock-table-row,
+html[data-theme="dark"] .stock-movement-row,
+html[data-theme="dark"] .due-table-row,
+html[data-theme="dark"] .warranty-table-row,
+html[data-theme="dark"] .customer-pro-row-clean {
+  background: rgba(17, 28, 46, 0.82) !important;
+  border-color: rgba(71, 85, 105, 0.35) !important;
+  color: #e2e8f0 !important;
+}
+
+html[data-theme="dark"] .sales-register-row-horizontal:nth-child(even),
+html[data-theme="dark"] .sales-register-row-split:nth-child(even),
+html[data-theme="dark"] .stock-table-row:nth-child(even),
+html[data-theme="dark"] .stock-movement-row:nth-child(even),
+html[data-theme="dark"] .due-table-row:nth-child(even),
+html[data-theme="dark"] .warranty-table-row:nth-child(even),
+html[data-theme="dark"] .customer-pro-row-clean:hover {
+  background: rgba(22, 34, 53, 0.96) !important;
+}
+
+html[data-theme="dark"] .stock-overview-card {
+  border-color: rgba(71, 85, 105, 0.45) !important;
+  box-shadow: 0 18px 34px rgba(2, 8, 23, 0.24) !important;
+}
+
+html[data-theme="dark"] .stock-overview-card-slate {
+  background: linear-gradient(180deg, rgba(51, 65, 85, 0.42), rgba(17, 28, 46, 0.98)) !important;
+}
+
+html[data-theme="dark"] .stock-overview-card-green {
+  background: linear-gradient(180deg, rgba(6, 95, 70, 0.42), rgba(17, 28, 46, 0.98)) !important;
+}
+
+html[data-theme="dark"] .stock-overview-card-amber {
+  background: linear-gradient(180deg, rgba(146, 64, 14, 0.4), rgba(17, 28, 46, 0.98)) !important;
+}
+
+html[data-theme="dark"] .stock-overview-card-rose {
+  background: linear-gradient(180deg, rgba(159, 18, 57, 0.38), rgba(17, 28, 46, 0.98)) !important;
+}
+
+html[data-theme="dark"] .stock-overview-card-blue {
+  background: linear-gradient(180deg, rgba(30, 64, 175, 0.4), rgba(17, 28, 46, 0.98)) !important;
+}
+
+html[data-theme="dark"] .stock-overview-card-teal {
+  background: linear-gradient(180deg, rgba(13, 148, 136, 0.38), rgba(17, 28, 46, 0.98)) !important;
+}
+
+html[data-theme="dark"] .stock-overview-card .stock-overview-label,
+html[data-theme="dark"] .stock-level-badge,
+html[data-theme="dark"] .stock-movement-badge {
+  box-shadow: none !important;
+}
+
+html[data-theme="dark"] .warranty-summary-card,
+html[data-theme="dark"] .customer-pro-summary-card {
+  border-color: rgba(71, 85, 105, 0.45) !important;
+  box-shadow: 0 18px 34px rgba(2, 8, 23, 0.24) !important;
+}
+
+html[data-theme="dark"] .warranty-summary-card-green {
+  background: linear-gradient(180deg, rgba(6, 95, 70, 0.42), rgba(17, 28, 46, 0.98)) !important;
+}
+
+html[data-theme="dark"] .warranty-summary-card-amber {
+  background: linear-gradient(180deg, rgba(146, 64, 14, 0.4), rgba(17, 28, 46, 0.98)) !important;
+}
+
+html[data-theme="dark"] .warranty-summary-card-slate {
+  background: linear-gradient(180deg, rgba(51, 65, 85, 0.42), rgba(17, 28, 46, 0.98)) !important;
+}
+
+html[data-theme="dark"] .warranty-table-intro,
+html[data-theme="dark"] .warranty-side-card-form {
+  background: #162235 !important;
+  border-color: rgba(71, 85, 105, 0.45) !important;
+}
+
+html[data-theme="dark"] .customer-pro-row:hover,
+html[data-theme="dark"] .customer-pro-row-active,
+html[data-theme="dark"] .customer-pro-mobile-card-active {
+  background: rgba(22, 34, 53, 0.96) !important;
+  border-color: rgba(96, 165, 250, 0.3) !important;
+}
+
+html[data-theme="dark"] .sales-hero,
+html[data-theme="dark"] .warranty-hero,
+html[data-theme="dark"] .warranty-simple-hero,
+html[data-theme="dark"] .warranty-pro-hero {
+  border-color: rgba(71, 85, 105, 0.45) !important;
+}
+
+html[data-theme="dark"] .sales-hero {
+  background:
+    radial-gradient(circle at top right, rgba(59, 130, 246, 0.12), transparent 28%),
+    linear-gradient(135deg, rgba(17, 28, 46, 0.98), rgba(10, 18, 32, 0.98)) !important;
+}
+
+html[data-theme="dark"] .warranty-hero,
+html[data-theme="dark"] .warranty-simple-hero {
+  background:
+    radial-gradient(circle at top right, rgba(34, 197, 94, 0.12), transparent 24%),
+    linear-gradient(135deg, rgba(17, 28, 46, 0.98), rgba(10, 18, 32, 0.98)) !important;
+}
+
+html[data-theme="dark"] .warranty-pro-hero {
+  background:
+    radial-gradient(circle at top right, rgba(37, 99, 235, 0.12), transparent 30%),
+    radial-gradient(circle at left bottom, rgba(16, 185, 129, 0.08), transparent 28%),
+    linear-gradient(135deg, rgba(17, 28, 46, 0.98), rgba(10, 18, 32, 0.98)) !important;
+}
+
+html[data-theme="dark"] .sales-hero h2,
+html[data-theme="dark"] .sales-hero p,
+html[data-theme="dark"] .warranty-hero-copy h2,
+html[data-theme="dark"] .warranty-hero-copy p,
+html[data-theme="dark"] .warranty-simple-hero h2,
+html[data-theme="dark"] .warranty-simple-hero p,
+html[data-theme="dark"] .warranty-pro-hero h2,
+html[data-theme="dark"] .warranty-pro-hero p {
+  color: #e2e8f0 !important;
+}
+
+html[data-theme="dark"] .sales-eyebrow,
+html[data-theme="dark"] .warranty-pro-eyebrow,
+html[data-theme="dark"] .warranty-simple-eyebrow {
+  color: #cbd5e1 !important;
+  background: rgba(30, 41, 59, 0.88) !important;
+  border-color: rgba(71, 85, 105, 0.45) !important;
+}
+
+html[data-theme="dark"] .sales-mobile-card,
+html[data-theme="dark"] .sales-mobile-grid div,
+html[data-theme="dark"] .sales-cart-item-meta span,
+html[data-theme="dark"] .sales-cart-line-total span,
+html[data-theme="dark"] .sales-empty-icon,
+html[data-theme="dark"] .sales-catalog-empty-state,
+html[data-theme="dark"] .sales-checkout-metric {
+  background: #162235 !important;
+  border-color: rgba(71, 85, 105, 0.45) !important;
+}
+
+html[data-theme="dark"] .sales-list-panel,
+html[data-theme="dark"] .sales-register-card,
+html[data-theme="dark"] .sales-register-mobile {
+  background: #111c2e !important;
+  border-color: rgba(71, 85, 105, 0.45) !important;
+}
+
+html[data-theme="dark"] .sales-register-head-horizontal,
+html[data-theme="dark"] .sales-register-head-split {
+  background: #162235 !important;
+  color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .sales-register-row-horizontal,
+html[data-theme="dark"] .sales-register-row-split {
+  background: rgba(17, 28, 46, 0.82) !important;
+  color: #e2e8f0 !important;
+  border-color: rgba(71, 85, 105, 0.35) !important;
+}
+
+html[data-theme="dark"] .sales-register-row-horizontal:nth-child(even),
+html[data-theme="dark"] .sales-register-row-split:nth-child(even) {
+  background: rgba(22, 34, 53, 0.96) !important;
+}
+
+html[data-theme="dark"] .sales-register-block strong {
+  color: #e2e8f0 !important;
+}
+
+html[data-theme="dark"] .sales-register-block span,
+html[data-theme="dark"] .sales-register-row-split span {
+  color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .sales-mobile-head strong,
+html[data-theme="dark"] .sales-mobile-grid strong,
+html[data-theme="dark"] .sales-empty-state h3 {
+  color: #e2e8f0 !important;
+}
+
+html[data-theme="dark"] .sales-mobile-head p,
+html[data-theme="dark"] .sales-mobile-grid span,
+html[data-theme="dark"] .sales-empty-state p {
+  color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .sales-mobile-amount,
+html[data-theme="dark"] .sales-side-label,
+html[data-theme="dark"] .sales-cart-pill {
+  background: rgba(30, 41, 59, 0.9) !important;
+  border-color: rgba(71, 85, 105, 0.45) !important;
+  color: #cbd5e1 !important;
+}
+
+html[data-theme="dark"] .sales-stock-badge-good {
+  color: #86efac !important;
+  background: rgba(6, 95, 70, 0.32) !important;
+}
+
+html[data-theme="dark"] .sales-stock-badge-low {
+  color: #fbbf24 !important;
+  background: rgba(146, 64, 14, 0.32) !important;
+}
+
+html[data-theme="dark"] .sales-stock-badge-out {
+  color: #fda4af !important;
+  background: rgba(127, 29, 29, 0.32) !important;
+}
+
+html[data-theme="dark"] .warranty-summary-icon,
+html[data-theme="dark"] .warranty-side-icon,
+html[data-theme="dark"] .warranty-customer-grid div,
+html[data-theme="dark"] .warranty-simple-highlight,
+html[data-theme="dark"] .warranty-simple-grid div,
+html[data-theme="dark"] .warranty-simple-stat,
+html[data-theme="dark"] .warranty-simple-panel,
+html[data-theme="dark"] .warranty-simple-card {
+  border-color: rgba(71, 85, 105, 0.45) !important;
+}
+
+html[data-theme="dark"] .warranty-customer-grid div,
+html[data-theme="dark"] .warranty-simple-highlight,
+html[data-theme="dark"] .warranty-simple-grid div,
+html[data-theme="dark"] .warranty-simple-stat,
+html[data-theme="dark"] .warranty-simple-panel,
+html[data-theme="dark"] .warranty-simple-card {
+  background: #111c2e !important;
+}
+
+html[data-theme="dark"] .warranty-customer-grid span,
+html[data-theme="dark"] .warranty-simple-stat span,
+html[data-theme="dark"] .warranty-simple-grid span,
+html[data-theme="dark"] .warranty-simple-card-head p,
+html[data-theme="dark"] .warranty-simple-highlight p,
+html[data-theme="dark"] .warranty-simple-cell small {
+  color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .warranty-customer-grid strong,
+html[data-theme="dark"] .warranty-simple-stat strong,
+html[data-theme="dark"] .warranty-simple-customer strong,
+html[data-theme="dark"] .warranty-simple-highlight strong,
+html[data-theme="dark"] .warranty-simple-card-head h3 {
+  color: #e2e8f0 !important;
+}
+
+html[data-theme="dark"] .warranty-pro-highlight-card,
+html[data-theme="dark"] .warranty-pro-table-shell,
+html[data-theme="dark"] .warranty-pro-table-body,
+html[data-theme="dark"] .warranty-pro-mobile-grid-inner div,
+html[data-theme="dark"] .warranty-pro-list-action,
+html[data-theme="dark"] .warranty-pro-summary-metric {
+  background: #162235 !important;
+  border-color: rgba(71, 85, 105, 0.45) !important;
+}
+
+html[data-theme="dark"] .warranty-pro-summary-copy > span,
+html[data-theme="dark"] .warranty-pro-summary-headline > span,
+html[data-theme="dark"] .warranty-pro-summary-copy p,
+html[data-theme="dark"] .warranty-pro-mobile-grid-inner span,
+html[data-theme="dark"] .warranty-pro-mobile-head p,
+html[data-theme="dark"] .warranty-pro-cell small {
+  color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .warranty-pro-summary-card strong,
+html[data-theme="dark"] .warranty-pro-mobile-head strong,
+html[data-theme="dark"] .warranty-pro-mobile-grid-inner strong,
+html[data-theme="dark"] .warranty-pro-panel-head h3,
+html[data-theme="dark"] .warranty-pro-panel-head > strong,
+html[data-theme="dark"] .warranty-pro-cell strong {
+  color: #e2e8f0 !important;
+}
+
+html[data-theme="dark"] .warranty-pro-row {
+  transition: background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease !important;
+}
+
+html[data-theme="dark"] .warranty-pro-row:hover {
+  background: linear-gradient(90deg, rgba(30, 41, 59, 0.98), rgba(22, 34, 53, 0.98)) !important;
+  border-top-color: rgba(96, 165, 250, 0.3) !important;
+  box-shadow: inset 3px 0 0 rgba(59, 130, 246, 0.7) !important;
 }

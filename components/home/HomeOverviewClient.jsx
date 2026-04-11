@@ -14,7 +14,6 @@ import ReceiptIcon from "@/components/svgs/ReceiptIcon";
 import ShoppingBagIcon from "@/components/svgs/ShoppingBagIcon";
 import StoreIcon from "@/components/svgs/StoreIcon";
 import TakaIcon from "@/components/svgs/TakaIcon";
-import usePurchaseLanguage from "@/components/purchase/usePurchaseLanguage";
 
 const FILTERS = {
   en: [
@@ -264,10 +263,10 @@ function isWithinRange(value, rangeStart) {
 }
 
 export default function HomeOverviewClient(props) {
-  const { language } = usePurchaseLanguage();
   const [activeFilter, setActiveFilter] = useState("today");
-  const copy = HOME_TEXT[language] || HOME_TEXT.en;
-  const filters = FILTERS[language] || FILTERS.en;
+  const homeLanguage = "en";
+  const copy = HOME_TEXT[homeLanguage];
+  const filters = FILTERS[homeLanguage];
   const {
     error,
     heroUpdatedAt,
@@ -303,77 +302,80 @@ export default function HomeOverviewClient(props) {
       cards: [
         {
           title: copy.cards.purchase,
-          value: formatCompactCurrency(purchaseAmount, language),
-          subtitle: copy.subtitles.purchaseEntries(formatNumber(filteredPurchases.length, language)),
+          value: formatCompactCurrency(purchaseAmount, homeLanguage),
+          subtitle: copy.subtitles.purchaseEntries(formatNumber(filteredPurchases.length, homeLanguage)),
           icon: ShoppingBagIcon,
           tone: "mint",
         },
         {
           title: copy.cards.sales,
-          value: formatCompactCurrency(salesAmount, language),
-          subtitle: copy.subtitles.salesEntries(formatNumber(filteredInvoices.length, language), formatNumber(unitsSold, language)),
+          value: formatCompactCurrency(salesAmount, homeLanguage),
+          subtitle: copy.subtitles.salesEntries(
+            formatNumber(filteredInvoices.length, homeLanguage),
+            formatNumber(unitsSold, homeLanguage),
+          ),
           icon: ReceiptIcon,
           tone: "blue",
         },
         {
           title: copy.cards.profit,
-          value: formatCompactCurrency(profitAmount, language),
+          value: formatCompactCurrency(profitAmount, homeLanguage),
           subtitle: copy.subtitles.profit,
           icon: ChartIcon,
           tone: "green",
         },
         {
           title: copy.cards.deposit,
-          value: formatCompactCurrency(collectedAmount, language),
+          value: formatCompactCurrency(collectedAmount, homeLanguage),
           subtitle: copy.subtitles.deposit,
           icon: MoneyIcon,
           tone: "rose",
         },
         {
           title: copy.cards.expense,
-          value: formatCompactCurrency(expenseAmount, language),
+          value: formatCompactCurrency(expenseAmount, homeLanguage),
           subtitle: copy.subtitles.expense,
           icon: AlertTriangleIcon,
           tone: "cyan",
         },
         {
           title: copy.cards.customers,
-          value: formatNumber(customers.total, language),
-          subtitle: copy.subtitles.activeCustomers(formatNumber(customers.active, language)),
+          value: formatNumber(customers.total, homeLanguage),
+          subtitle: copy.subtitles.activeCustomers(formatNumber(customers.active, homeLanguage)),
           icon: CustomerIcon,
           tone: "indigo",
         },
         {
           title: copy.cards.suppliers,
-          value: formatNumber(suppliers.total, language),
-          subtitle: copy.subtitles.purchaseRecords(formatNumber(filteredPurchases.length, language)),
+          value: formatNumber(suppliers.total, homeLanguage),
+          subtitle: copy.subtitles.purchaseRecords(formatNumber(filteredPurchases.length, homeLanguage)),
           icon: StoreIcon,
           tone: "peach",
         },
         {
           title: copy.cards.receivable,
-          value: formatCompactCurrency(dueSummary.totalReceivable || 0, language),
-          subtitle: copy.subtitles.customerDue(formatNumber(dueSummary.overdueCount || 0, language)),
+          value: formatCompactCurrency(dueSummary.totalReceivable || 0, homeLanguage),
+          subtitle: copy.subtitles.customerDue(formatNumber(dueSummary.overdueCount || 0, homeLanguage)),
           icon: CalculatorIcon,
           tone: "amber",
         },
         {
           title: copy.cards.stockValue,
-          value: formatCompactCurrency(stockOverview.totalValue || 0, language),
-          subtitle: copy.subtitles.stockProducts(formatNumber(stockOverview.totalProducts || 0, language)),
+          value: formatCompactCurrency(stockOverview.totalValue || 0, homeLanguage),
+          subtitle: copy.subtitles.stockProducts(formatNumber(stockOverview.totalProducts || 0, homeLanguage)),
           icon: BoxIcon,
           tone: "soft-blue",
         },
         {
           title: copy.cards.cashBalance,
-          value: formatCompactCurrency(cashBalance, language),
+          value: formatCompactCurrency(cashBalance, homeLanguage),
           subtitle: copy.subtitles.cashBalance,
           icon: TakaIcon,
           tone: "emerald",
         },
         {
           title: copy.cards.businessValue,
-          value: formatCompactCurrency(businessAssetValue, language),
+          value: formatCompactCurrency(businessAssetValue, homeLanguage),
           subtitle: copy.subtitles.businessValue,
           icon: DashboardIcon,
           tone: "coral",
@@ -381,7 +383,7 @@ export default function HomeOverviewClient(props) {
       ],
       activity: filteredActivity.slice(0, 6),
     };
-  }, [activeFilter, activityFeed, copy, customers, dueSummary, invoices, language, purchases, stockOverview, suppliers]);
+  }, [activeFilter, activityFeed, copy, customers, dueSummary, homeLanguage, invoices, purchases, stockOverview, suppliers]);
 
   return (
     <main className="home-dashboard home-dashboard-compact">
@@ -392,8 +394,8 @@ export default function HomeOverviewClient(props) {
           <p>{copy.overviewSubtitle}</p>
         </div>
         <div className="home-overview-header-meta">
-          <strong>{heroUpdatedAt ? getRelativeTime(heroUpdatedAt, language) : copy.awaitingData}</strong>
-          <span>{heroUpdatedAt ? `${copy.updatedPrefix} ${formatDate(heroUpdatedAt, language)}` : copy.noRecentActivity}</span>
+          <strong>{heroUpdatedAt ? getRelativeTime(heroUpdatedAt, homeLanguage) : copy.awaitingData}</strong>
+          <span>{heroUpdatedAt ? `${copy.updatedPrefix} ${formatDate(heroUpdatedAt, homeLanguage)}` : copy.noRecentActivity}</span>
         </div>
       </section>
 
@@ -490,7 +492,7 @@ export default function HomeOverviewClient(props) {
                     </div>
                     <div className="home-activity-meta">
                       <strong>{item.value}</strong>
-                      <span>{getRelativeTime(item.createdAt, language)}</span>
+                      <span>{getRelativeTime(item.createdAt, homeLanguage)}</span>
                     </div>
                   </article>
                 ))
@@ -523,7 +525,7 @@ export default function HomeOverviewClient(props) {
                     <span className="home-category-rank">0{index + 1}</span>
                     <div>
                       <strong>{name}</strong>
-                      <p>{formatNumber(total, language)} products in catalog</p>
+                      <p>{formatNumber(total, homeLanguage)} products in catalog</p>
                     </div>
                   </article>
                 ))
@@ -551,21 +553,21 @@ export default function HomeOverviewClient(props) {
               <article className="home-priority-card">
                 <div>
                   <span>{copy.active}</span>
-                  <strong>{formatNumber(warrantySummary.active || 0, language)}</strong>
+                  <strong>{formatNumber(warrantySummary.active || 0, homeLanguage)}</strong>
                 </div>
                 <p>{copy.warrantyActiveText}</p>
               </article>
               <article className="home-priority-card">
                 <div>
                   <span>{copy.expiring}</span>
-                  <strong>{formatNumber(warrantySummary.expiring || 0, language)}</strong>
+                  <strong>{formatNumber(warrantySummary.expiring || 0, homeLanguage)}</strong>
                 </div>
                 <p>{copy.warrantyExpiringText}</p>
               </article>
               <article className="home-priority-card">
                 <div>
                   <span>{copy.expired}</span>
-                  <strong>{formatNumber(warrantySummary.expired || 0, language)}</strong>
+                  <strong>{formatNumber(warrantySummary.expired || 0, homeLanguage)}</strong>
                 </div>
                 <p>{copy.warrantyExpiredText}</p>
               </article>
