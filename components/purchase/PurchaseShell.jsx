@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { purchaseIcons } from "@/components/purchase/purchaseContent";
 import usePurchaseLanguage from "@/components/purchase/usePurchaseLanguage";
@@ -85,11 +85,27 @@ function isMenuItemActive(key, href, pathname) {
 }
 
 export default function PurchaseShell({ children }) {
+  const router = useRouter();
   const pathname = usePathname();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [theme, setTheme] = useState("light");
   const [isThemeReady, setIsThemeReady] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const { language, setLanguage, t, menuItems } = usePurchaseLanguage();
+
+  async function handleLogout() {
+    setIsLoggingOut(true);
+
+    try {
+      await fetch("/api/auth/logout", {
+        method: "POST",
+      });
+    } finally {
+      router.push("/admin/login");
+      router.refresh();
+      setIsLoggingOut(false);
+    }
+  }
 
   useEffect(() => {
     const handleResize = () => {
@@ -235,6 +251,9 @@ export default function PurchaseShell({ children }) {
             >
               <GlobeIcon />
               <span>{t.languageLabel}</span>
+            </button>
+            <button type="button" className="pill-button pill-logout" onClick={handleLogout} disabled={isLoggingOut}>
+              <span>{language === "bn" ? (isLoggingOut ? "লগআউট হচ্ছে..." : "লগআউট") : isLoggingOut ? "Logging out..." : "Logout"}</span>
             </button>
           </div>
         </header>
