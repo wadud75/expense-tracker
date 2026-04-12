@@ -1,7 +1,8 @@
-﻿import { NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { upsertProductFromPurchase } from "@/lib/inventory";
 import { calculatePurchaseTotal, createInvoiceNumber } from "@/lib/invoiceUtils";
 import clientPromise from "@/lib/mongodb";
+import { requireAdminRequest } from "@/lib/server-auth";
 
 function normalizeNumber(value, fallback = 0) {
   const parsed = Number(value);
@@ -40,6 +41,9 @@ async function getCollection() {
 
 export async function GET() {
   try {
+    const unauthorizedResponse = await requireAdminRequest();
+    if (unauthorizedResponse) return unauthorizedResponse;
+
     const collection = await getCollection();
     const purchases = await collection.find({}).sort({ createdAt: -1 }).limit(100).toArray();
 
@@ -74,6 +78,9 @@ export async function GET() {
 
 export async function POST(request) {
   try {
+    const unauthorizedResponse = await requireAdminRequest();
+    if (unauthorizedResponse) return unauthorizedResponse;
+
     const payload = await request.json();
     const purchase = buildPurchaseDocument(payload);
 

@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
 import { createSale, createSalesBatch, getSalesRecords } from "@/lib/inventory";
+import { requireAdminRequest } from "@/lib/server-auth";
 
 export async function GET() {
   try {
+    const unauthorizedResponse = await requireAdminRequest();
+    if (unauthorizedResponse) return unauthorizedResponse;
+
     const sales = await getSalesRecords();
     return NextResponse.json({ sales });
   } catch (error) {
@@ -15,6 +19,9 @@ export async function GET() {
 
 export async function POST(request) {
   try {
+    const unauthorizedResponse = await requireAdminRequest();
+    if (unauthorizedResponse) return unauthorizedResponse;
+
     const payload = await request.json();
 
     if (Array.isArray(payload.items) && payload.items.length) {

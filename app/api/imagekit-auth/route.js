@@ -1,7 +1,11 @@
 import crypto from "node:crypto";
 import { NextResponse } from "next/server";
+import { requireAdminRequest } from "@/lib/server-auth";
 
 export async function GET() {
+  const unauthorizedResponse = await requireAdminRequest();
+  if (unauthorizedResponse) return unauthorizedResponse;
+
   const privateKey = process.env.IMAGEKIT_PRIVATE_KEY;
 
   if (!privateKey) {

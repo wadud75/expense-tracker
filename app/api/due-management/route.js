@@ -4,9 +4,13 @@ import {
   getDueManagementSnapshot,
   recordDuePayment,
 } from "@/lib/dueManagement";
+import { requireAdminRequest } from "@/lib/server-auth";
 
 export async function GET() {
   try {
+    const unauthorizedResponse = await requireAdminRequest();
+    if (unauthorizedResponse) return unauthorizedResponse;
+
     const snapshot = await getDueManagementSnapshot();
     return NextResponse.json(snapshot);
   } catch (error) {
@@ -19,6 +23,9 @@ export async function GET() {
 
 export async function POST(request) {
   try {
+    const unauthorizedResponse = await requireAdminRequest();
+    if (unauthorizedResponse) return unauthorizedResponse;
+
     const payload = await request.json();
     const entry = await createManualDueEntry(payload);
 
@@ -33,6 +40,9 @@ export async function POST(request) {
 
 export async function PATCH(request) {
   try {
+    const unauthorizedResponse = await requireAdminRequest();
+    if (unauthorizedResponse) return unauthorizedResponse;
+
     const payload = await request.json();
     const result = await recordDuePayment(payload);
 

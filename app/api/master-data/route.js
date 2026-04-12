@@ -1,6 +1,7 @@
 import { ObjectId } from "mongodb";
 import { NextResponse } from "next/server";
 import clientPromise from "@/lib/mongodb";
+import { requireAdminRequest } from "@/lib/server-auth";
 
 const MASTER_DATA_TYPES = ["category", "supplier", "brand", "model", "variant", "seller"];
 
@@ -15,6 +16,9 @@ async function getCollection() {
 
 export async function GET() {
   try {
+    const unauthorizedResponse = await requireAdminRequest();
+    if (unauthorizedResponse) return unauthorizedResponse;
+
     const collection = await getCollection();
     const entries = await collection.find({}).sort({ type: 1, name: 1 }).toArray();
 
@@ -49,6 +53,9 @@ export async function GET() {
 
 export async function POST(request) {
   try {
+    const unauthorizedResponse = await requireAdminRequest();
+    if (unauthorizedResponse) return unauthorizedResponse;
+
     const payload = await request.json();
     const type = (payload.type || "").trim().toLowerCase();
     const name = normalizeName(payload.name);
@@ -105,6 +112,9 @@ export async function POST(request) {
 
 export async function DELETE(request) {
   try {
+    const unauthorizedResponse = await requireAdminRequest();
+    if (unauthorizedResponse) return unauthorizedResponse;
+
     const payload = await request.json();
     const type = (payload.type || "").trim().toLowerCase();
     const itemId = (payload.id || "").trim();

@@ -1,8 +1,12 @@
-﻿import { NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { adjustStock, getStockSnapshot } from "@/lib/inventory";
+import { requireAdminRequest } from "@/lib/server-auth";
 
 export async function GET() {
   try {
+    const unauthorizedResponse = await requireAdminRequest();
+    if (unauthorizedResponse) return unauthorizedResponse;
+
     const snapshot = await getStockSnapshot();
     return NextResponse.json(snapshot);
   } catch (error) {
@@ -15,6 +19,9 @@ export async function GET() {
 
 export async function POST(request) {
   try {
+    const unauthorizedResponse = await requireAdminRequest();
+    if (unauthorizedResponse) return unauthorizedResponse;
+
     const payload = await request.json();
     await adjustStock(payload);
     const snapshot = await getStockSnapshot();

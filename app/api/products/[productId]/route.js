@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
 import { deleteProduct, updateProduct } from "@/lib/inventory";
+import { requireAdminRequest } from "@/lib/server-auth";
 
 export async function PUT(request, context) {
   try {
+    const unauthorizedResponse = await requireAdminRequest();
+    if (unauthorizedResponse) return unauthorizedResponse;
+
     const { productId } = await context.params;
     const body = await request.json();
 
@@ -27,6 +31,9 @@ export async function PUT(request, context) {
 
 export async function DELETE(_request, context) {
   try {
+    const unauthorizedResponse = await requireAdminRequest();
+    if (unauthorizedResponse) return unauthorizedResponse;
+
     const { productId } = await context.params;
     await deleteProduct(productId);
     return NextResponse.json({ success: true });

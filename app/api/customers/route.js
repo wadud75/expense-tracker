@@ -1,6 +1,7 @@
 import { ObjectId } from "mongodb";
 import { NextResponse } from "next/server";
 import clientPromise from "@/lib/mongodb";
+import { requireAdminRequest } from "@/lib/server-auth";
 
 function normalizeText(value) {
   return (value || "").trim().replace(/\s+/g, " ");
@@ -60,6 +61,9 @@ async function findDuplicateCustomer(collection, { normalizedName, normalizedPho
 
 export async function GET() {
   try {
+    const unauthorizedResponse = await requireAdminRequest();
+    if (unauthorizedResponse) return unauthorizedResponse;
+
     const collection = await getCollection();
     const customers = await collection.find({}).sort({ updatedAt: -1, createdAt: -1 }).toArray();
 
@@ -76,6 +80,9 @@ export async function GET() {
 
 export async function POST(request) {
   try {
+    const unauthorizedResponse = await requireAdminRequest();
+    if (unauthorizedResponse) return unauthorizedResponse;
+
     const payload = await request.json();
     const name = normalizeText(payload.name);
     const phone = normalizePhone(payload.phone);
@@ -138,6 +145,9 @@ export async function POST(request) {
 
 export async function PUT(request) {
   try {
+    const unauthorizedResponse = await requireAdminRequest();
+    if (unauthorizedResponse) return unauthorizedResponse;
+
     const payload = await request.json();
     const id = normalizeText(payload.id);
 
@@ -212,6 +222,9 @@ export async function PUT(request) {
 
 export async function DELETE(request) {
   try {
+    const unauthorizedResponse = await requireAdminRequest();
+    if (unauthorizedResponse) return unauthorizedResponse;
+
     const payload = await request.json();
     const id = normalizeText(payload.id);
 

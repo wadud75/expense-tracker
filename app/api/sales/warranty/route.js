@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
 import { updateSalesWarrantyRecords } from "@/lib/inventory";
+import { requireAdminRequest } from "@/lib/server-auth";
 
 export async function PUT(request) {
   try {
+    const unauthorizedResponse = await requireAdminRequest();
+    if (unauthorizedResponse) return unauthorizedResponse;
+
     const payload = await request.json();
     const result = await updateSalesWarrantyRecords(payload);
     return NextResponse.json(result);

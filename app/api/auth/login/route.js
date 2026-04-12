@@ -8,6 +8,12 @@ import {
   verifyAdminEmail,
   verifyAdminPassword,
 } from "@/lib/auth";
+import {
+  clearLoginFailures,
+  getRateLimitKey,
+  isLoginRateLimited,
+  recordLoginFailure,
+} from "@/lib/auth-rate-limit";
 
 export async function POST(request) {
   try {
@@ -25,10 +31,22 @@ export async function POST(request) {
     }
 
     const normalizedEmail = String(email).trim().toLowerCase();
+    const rateLimitKey = getRateLimitKey(request, normalizedEmail);
+    const rateLimit = isLoginRateLimited(rateLimitKey);
+
+    if (rateLimit.limited) {
+      return NextResponse.json(
+        { error: "Too many failed login attempts. Try again later." },
+        { status: 429 },
+      );
+    }
 
     if (!verifyAdminEmail(normalizedEmail) || !verifyAdminPassword(password)) {
+      recordLoginFailure(rateLimitKey);
       return NextResponse.json({ error: "Invalid email or password." }, { status: 401 });
     }
+
+    clearLoginFailures(rateLimitKey);
 
     const response = NextResponse.json({
       ok: true,
