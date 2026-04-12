@@ -224,6 +224,7 @@ export const statCardConfig = [
 ];
 
 export const purchaseIcons = {
+  AlertCircleIcon,
   AlertTriangleIcon,
   BadgeCheckIcon,
   BellIcon,
@@ -235,8 +236,11 @@ export const purchaseIcons = {
   RefreshIcon,
   ReportIcon,
   SearchIcon,
+  StackIcon,
   StoreIcon,
+  TakaIcon,
   WarningIcon,
+  CheckIcon,
 };
 
 export function detectLanguage() {

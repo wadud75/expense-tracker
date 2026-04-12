@@ -5,6 +5,7 @@ import BoxIcon from "@/components/svgs/BoxIcon";
 import CheckIcon from "@/components/svgs/CheckIcon";
 import CloseIcon from "@/components/svgs/CloseIcon";
 import GlobeIcon from "@/components/svgs/GlobeIcon";
+import { translations } from "@/components/purchase/purchaseContent";
 import StoreIcon from "@/components/svgs/StoreIcon";
 import usePurchaseLanguage from "@/components/purchase/usePurchaseLanguage";
 
@@ -17,7 +18,8 @@ const MASTER_SECTIONS = [
 ];
 
 export default function AdminDashboard() {
-  const { t } = usePurchaseLanguage();
+  usePurchaseLanguage();
+  const t = translations.en;
   const [items, setItems] = useState({
     category: [],
     supplier: [],

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import InvoicePreviewModal from "@/components/invoices/InvoicePreviewModal";
+import { translations } from "@/components/purchase/purchaseContent";
 import usePurchaseLanguage from "@/components/purchase/usePurchaseLanguage";
 import { purchaseIcons } from "@/components/purchase/purchaseContent";
 import { downloadInvoicePdf } from "@/lib/invoicePrint";
@@ -145,7 +146,14 @@ function getQuickFilterRange(filterKey) {
 }
 
 export default function PurchaseDashboard() {
-  const { t, statCards, language } = usePurchaseLanguage();
+  usePurchaseLanguage();
+  const t = translations.en;
+  const statCards = [
+    { key: "count", title: t.statCards[0], icon: purchaseIcons.StackIcon, tone: "stat-card stat-lavender" },
+    { key: "payments", title: t.statCards[1], icon: purchaseIcons.TakaIcon, tone: "stat-card stat-sky" },
+    { key: "units", title: t.statCards[2], icon: purchaseIcons.CheckIcon, tone: "stat-card stat-green" },
+    { key: "average", title: t.statCards[3], icon: purchaseIcons.AlertCircleIcon, tone: "stat-card stat-rose" },
+  ];
   const [searchTerm, setSearchTerm] = useState("");
   const [purchases, setPurchases] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -255,10 +263,7 @@ export default function PurchaseDashboard() {
     overviewTotals.units,
     formatAmount(averagePayment),
   ];
-  const subtitle =
-    language === "bn"
-      ? `মোট ${purchases.length} টি ক্রয়`
-      : `Total ${purchases.length} purchases`;
+  const subtitle = `Total ${purchases.length} purchases`;
 
   function handleQuickFilterClick(filterKey) {
     setActiveQuickFilter(filterKey);
@@ -365,8 +370,8 @@ export default function PurchaseDashboard() {
       <div className="table-card">
         <div className="purchase-table-scroll">
           <div className="table-head purchase-table-head">
-            {t.tableHeaders.map((header) => (
-              <span key={header}>{header}</span>
+            {t.tableHeaders.map((header, index) => (
+              <span key={`${index}-${header}`}>{header}</span>
             ))}
           </div>
 

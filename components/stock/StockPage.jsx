@@ -68,7 +68,7 @@ function getMovementTone(type) {
 }
 
 export default function StockPage() {
-  const { language } = usePurchaseLanguage();
+  usePurchaseLanguage();
   const [snapshot, setSnapshot] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [message, setMessage] = useState("");
@@ -160,8 +160,8 @@ export default function StockPage() {
     <section className="content-area stock-page">
       <div className="section-heading">
         <div>
-          <h2>{language === "bn" ? "???? ????????????" : "Stock Management"}</h2>
-          <p>{language === "bn" ? "???? ????? ????? ??? ?????????? ?????? ????" : "Review stock levels and adjust stock manually"}</p>
+          <h2>Stock Management</h2>
+          <p>Review stock levels and adjust stock manually</p>
         </div>
       </div>
 
@@ -181,18 +181,14 @@ export default function StockPage() {
         <section className="stock-panel stock-adjust-panel">
           <div className="stock-panel-head">
             <div>
-              <h3>{language === "bn" ? "????????? ???? ???????????????" : "Manual Stock Adjustment"}</h3>
-              <p className="stock-panel-copy">
-                {language === "bn"
-                  ? "???? ????? ????, ???? ??????? ???? ?????? ??? ????, ????? ?????? ??? ?????"
-                  : "Select a product, choose the adjustment type, and save the quantity change."}
-              </p>
+              <h3>Manual Stock Adjustment</h3>
+              <p className="stock-panel-copy">Select a product, choose the adjustment type, and save the quantity change.</p>
             </div>
           </div>
 
           <form className="stock-adjust-form" onSubmit={handleAdjustStock}>
             <label className="purchase-field-stack stock-field-stack">
-              <span>{language === "bn" ? "????" : "Product"}</span>
+              <span>Product</span>
               <div className="purchase-select-wrap stock-select-wrap">
                 <select
                   className="purchase-input purchase-select purchase-select-input"
@@ -200,7 +196,7 @@ export default function StockPage() {
                   onChange={(event) => setAdjustment((current) => ({ ...current, productId: event.target.value }))}
                   required
                 >
-                  <option value="">{language === "bn" ? "???? ????? ????" : "Select product"}</option>
+                  <option value="">Select product</option>
                   {products.map((product) => (
                     <option key={product.id} value={product.id}>
                       {product.displayName}
@@ -215,15 +211,15 @@ export default function StockPage() {
 
             <div className="stock-adjust-grid">
               <label className="purchase-field-stack stock-field-stack">
-                <span>{language === "bn" ? "???" : "Type"}</span>
+                <span>Type</span>
                 <div className="purchase-select-wrap stock-select-wrap">
                   <select
                     className="purchase-input purchase-select purchase-select-input"
                     value={adjustment.direction}
                     onChange={(event) => setAdjustment((current) => ({ ...current, direction: event.target.value }))}
                   >
-                    <option value="in">{language === "bn" ? "???? ?????" : "Increase stock"}</option>
-                    <option value="out">{language === "bn" ? "???? ????" : "Decrease stock"}</option>
+                    <option value="in">Increase stock</option>
+                    <option value="out">Decrease stock</option>
                   </select>
                   <span className="purchase-select-arrow" aria-hidden="true">
                     <ChevronDownIcon />
@@ -232,7 +228,7 @@ export default function StockPage() {
               </label>
 
               <label className="purchase-field-stack stock-field-stack">
-                <span>{language === "bn" ? "??????" : "Quantity"}</span>
+                <span>Quantity</span>
                 <input
                   className="purchase-input"
                   type="number"
@@ -246,18 +242,18 @@ export default function StockPage() {
             </div>
 
             <label className="purchase-field-stack stock-field-stack">
-              <span>{language === "bn" ? "???" : "Note"}</span>
+              <span>Note</span>
               <input
                 className="purchase-input"
                 type="text"
-                placeholder={language === "bn" ? "???????? ??? ?????" : "Write a note"}
+                placeholder="Write a note"
                 value={adjustment.note}
                 onChange={(event) => setAdjustment((current) => ({ ...current, note: event.target.value }))}
               />
             </label>
 
             <button type="submit" className="primary-button stock-submit-button">
-              {language === "bn" ? "???? ????? ????" : "Update Stock"}
+              Update Stock
             </button>
           </form>
         </section>
@@ -265,12 +261,8 @@ export default function StockPage() {
         <section className="stock-panel stock-panel-wide">
           <div className="stock-panel-head">
             <div>
-              <h3>{language === "bn" ? "???? ???????" : "Stock Overview"}</h3>
-              <p className="stock-panel-copy">
-                {language === "bn"
-                  ? "?????????, ?????????, ??????????? ??? ??????? ???? ?????? ??????"
-                  : "Review category, brand, variant, and current stock in one view."}
-              </p>
+              <h3>Stock Overview</h3>
+              <p className="stock-panel-copy">Review category, brand, variant, and current stock in one view.</p>
             </div>
           </div>
 
@@ -318,12 +310,8 @@ export default function StockPage() {
       <section className="stock-panel">
         <div className="stock-panel-head">
           <div>
-            <h3>{language === "bn" ? "?????????? ???? ????????" : "Recent Stock Movements"}</h3>
-            <p className="stock-panel-copy">
-              {language === "bn"
-                ? "????, ??????, ??? ????????? ?????????? ?????? ?? ?????? ??????"
-                : "Track purchase, sale, and manual adjustment activity in one place."}
-            </p>
+            <h3>Recent Stock Movements</h3>
+            <p className="stock-panel-copy">Track purchase, sale, and manual adjustment activity in one place.</p>
           </div>
         </div>
         <div className="table-card stock-table-card">
