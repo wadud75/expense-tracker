@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   detectLanguage,
   LANGUAGE_STORAGE_KEY,
@@ -9,8 +9,30 @@ import {
   translations,
 } from "@/components/purchase/purchaseContent";
 
+const LANGUAGE_CHANGE_EVENT = "expense-tracker-language-change";
+
 export default function usePurchaseLanguage() {
   const [language, setLanguage] = useState("en");
+  const languageRef = useRef("en");
+  const updateLanguage = useCallback((nextLanguage) => {
+    const resolvedLanguage =
+      typeof nextLanguage === "function" ? nextLanguage(languageRef.current) : nextLanguage;
+
+    languageRef.current = resolvedLanguage;
+    setLanguage(resolvedLanguage);
+
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(LANGUAGE_STORAGE_KEY, resolvedLanguage);
+      document.documentElement.lang = resolvedLanguage;
+      window.setTimeout(() => {
+        window.dispatchEvent(
+          new CustomEvent(LANGUAGE_CHANGE_EVENT, {
+            detail: { language: resolvedLanguage },
+          }),
+        );
+      }, 0);
+    }
+  }, []);
 
   const t = translations[language];
   const locale = language === "bn" ? "bn-BD" : "en-US";
@@ -25,21 +47,40 @@ export default function usePurchaseLanguage() {
   }));
 
   useEffect(() => {
-    setLanguage(detectLanguage());
+    const nextLanguage = detectLanguage();
+    languageRef.current = nextLanguage;
+    setLanguage(nextLanguage);
+    document.documentElement.lang = nextLanguage;
   }, []);
 
   useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
+    function syncLanguage(event) {
+      const nextLanguage = event?.detail?.language || detectLanguage();
+      languageRef.current = nextLanguage;
+      setLanguage(nextLanguage);
+      document.documentElement.lang = nextLanguage;
     }
 
-    window.localStorage.setItem(LANGUAGE_STORAGE_KEY, language);
-    document.documentElement.lang = language;
-  }, [language]);
+    function handleStorage(event) {
+      if (event.key && event.key !== LANGUAGE_STORAGE_KEY) {
+        return;
+      }
+
+      syncLanguage();
+    }
+
+    window.addEventListener(LANGUAGE_CHANGE_EVENT, syncLanguage);
+    window.addEventListener("storage", handleStorage);
+
+    return () => {
+      window.removeEventListener(LANGUAGE_CHANGE_EVENT, syncLanguage);
+      window.removeEventListener("storage", handleStorage);
+    };
+  }, []);
 
   return {
     language,
-    setLanguage,
+    setLanguage: updateLanguage,
     t,
     menuItems,
     statCards,

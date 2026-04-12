@@ -14,6 +14,7 @@ import ReceiptIcon from "@/components/svgs/ReceiptIcon";
 import ShoppingBagIcon from "@/components/svgs/ShoppingBagIcon";
 import StoreIcon from "@/components/svgs/StoreIcon";
 import TakaIcon from "@/components/svgs/TakaIcon";
+import usePurchaseLanguage from "@/components/purchase/usePurchaseLanguage";
 
 const FILTERS = {
   en: [
@@ -91,9 +92,10 @@ const HOME_TEXT = {
       cashBalance: "All collection - all expense",
       businessValue: "Due + stock + cash",
     },
+    categoryProducts: (count) => `${count} products in catalog`,
   },
   bn: {
-    overviewKicker: "অভারভিউ ড্যাশবোর্ড",
+    overviewKicker: "ড্যাশবোর্ড ওভারভিউ",
     overviewTitle: "ব্যবসার সারসংক্ষেপ",
     overviewSubtitle: "বিক্রি, বাস্তব প্রফিট, আদায়, স্টক ভ্যালু, কাস্টমার এবং বকেয়ার সংক্ষিপ্ত চিত্র।",
     awaitingData: "তথ্য আসছে",
@@ -119,10 +121,10 @@ const HOME_TEXT = {
     noRangeActivityText: "৩০ দিন বা লাইফটাইম ফিল্টার ব্যবহার করে দেখুন।",
     updatedPrefix: "আপডেট",
     cards: {
-      purchase: "ক্রয়ের মূল্য",
-      sales: "বিক্রির মূল্য",
-      profit: "বাস্তব প্রফিট",
-      deposit: "আদায়",
+      purchase: "ক্রয় মূল্য",
+      sales: "বিক্রয় মূল্য",
+      profit: "রিয়েলাইজড প্রফিট",
+      deposit: "মোট জমা",
       expense: "ক্রয় পরিশোধ",
       customers: "মোট কাস্টমার",
       suppliers: "মোট সাপ্লায়ার",
@@ -134,16 +136,59 @@ const HOME_TEXT = {
     subtitles: {
       purchaseEntries: (count) => `${count} টি এন্ট্রি`,
       salesEntries: (count, units) => `${count} টি বিক্রয় • পণ্য ${units}`,
-      profit: "শুধু সম্পন্ন বিক্রয় থেকে হিসাব করা হয়েছে",
+      profit: "বিক্রয় মূল্য - ক্রয় মূল্য - মার্জিন",
       deposit: "ম্যানুয়াল জমা ছাড়া",
-      expense: "ম্যানুয়াল খরচ যুক্ত নয়",
-      activeCustomers: (count) => `${count} জন সক্রিয়`,
-      purchaseRecords: (count) => `${count} টি ক্রয় এন্ট্রি আছে`,
+      expense: "ম্যানুয়াল খরচ ছাড়া",
+      activeCustomers: (count) => `${count} জন সক্রিয় কাস্টমার`,
+      purchaseRecords: (count) => `${count} টি ক্রয় এন্ট্রি`,
       customerDue: (count) => `${count} জন কাস্টমারের কাছে`,
       stockProducts: (count) => `${count} টি পণ্য স্টকে`,
-      cashBalance: "সব জমা - সব খরচ",
-      businessValue: "বকেয়া + স্টক + ক্যাশ",
+      cashBalance: "সব আয় - সব ব্যয়",
+      businessValue: "বকেয়া + স্টক + ক্যাশ - প্রদেয়",
     },
+    activityTypes: {
+      purchase: "ক্রয়",
+      sale: "বিক্রয়",
+      stock: "স্টক",
+    },
+    activityLabels: {
+      purchaseTitleFallback: "নতুন ক্রয় যোগ হয়েছে",
+      stockTitleFallback: "স্টক মুভমেন্ট",
+      supplierFallback: "সাপ্লায়ার",
+      customerFallback: "ওয়াক-ইন কাস্টমার",
+      units: "ইউনিট",
+      adjustment: "এডজাস্টমেন্ট",
+    },
+    workspaceTitles: {
+      admin: "অ্যাডমিন ড্যাশবোর্ড",
+      purchase: "ক্রয়",
+      sales: "সেলস / পিওএস",
+      products: "পণ্য",
+      stock: "স্টক",
+      customers: "কাস্টমার",
+      due: "বকেয়া ব্যবস্থাপনা",
+      warranty: "ওয়ারেন্টি",
+    },
+    workspaceDescriptions: {
+      admin: "ক্যাটাগরি, সাপ্লায়ার ও সেটআপ নিয়ন্ত্রণ করুন।",
+      purchase: "ক্রয় এন্ট্রি করুন এবং স্টকে যুক্ত করুন।",
+      sales: "বিক্রয়, ইনভয়েস ও লাইভ কাউন্টার পরিচালনা করুন।",
+      products: "ক্যাটালগ, মূল্য ও স্টক হেলথ নিয়ন্ত্রণ করুন।",
+      stock: "স্টক এডজাস্টমেন্ট ও মুভমেন্ট দেখুন।",
+      customers: "প্রোফাইল, রিপিট কাস্টমার ও ফলো-আপ ট্র্যাক করুন।",
+      due: "আদায়যোগ্য ও প্রদেয় বকেয়া পর্যবেক্ষণ করুন।",
+      warranty: "সক্রিয়, মেয়াদোত্তীর্ণ ও ম্যানুয়াল ওয়ারেন্টি দেখুন।",
+    },
+    workspaceMetrics: {
+      records: (count) => `${count} টি রেকর্ড`,
+      entries: (count) => `${count} টি এন্ট্রি`,
+      invoices: (count) => `${count} টি ইনভয়েস`,
+      items: (count) => `${count} টি আইটেম`,
+      units: (count) => `${count} টি ইউনিট`,
+      profiles: (count) => `${count} টি প্রোফাইল`,
+      expiring: (count) => `${count} টি মেয়াদ শেষের পথে`,
+    },
+    categoryProducts: (count) => `${count} টি পণ্য ক্যাটালগে`,
   },
 };
 
@@ -262,9 +307,91 @@ function isWithinRange(value, rangeStart) {
   return !Number.isNaN(date.getTime()) && date.getTime() >= rangeStart.getTime();
 }
 
+function localizeWorkspaceCards(workspaceCards, copy, language) {
+  if (language !== "bn") {
+    return workspaceCards;
+  }
+
+  return workspaceCards.map((card) => {
+    if (card.href === "/admin") {
+      return { ...card, title: copy.workspaceTitles.admin, description: copy.workspaceDescriptions.admin, metric: copy.workspaceMetrics.records(formatNumber(card.metricValue || 0, language)) };
+    }
+
+    if (card.href === "/purchase") {
+      return { ...card, title: copy.workspaceTitles.purchase, description: copy.workspaceDescriptions.purchase, metric: copy.workspaceMetrics.entries(formatNumber(card.metricValue || 0, language)) };
+    }
+
+    if (card.href === "/sales") {
+      return { ...card, title: copy.workspaceTitles.sales, description: copy.workspaceDescriptions.sales, metric: copy.workspaceMetrics.invoices(formatNumber(card.metricValue || 0, language)) };
+    }
+
+    if (card.href === "/products") {
+      return { ...card, title: copy.workspaceTitles.products, description: copy.workspaceDescriptions.products, metric: copy.workspaceMetrics.items(formatNumber(card.metricValue || 0, language)) };
+    }
+
+    if (card.href === "/stock") {
+      return { ...card, title: copy.workspaceTitles.stock, description: copy.workspaceDescriptions.stock, metric: copy.workspaceMetrics.units(formatNumber(card.metricValue || 0, language)) };
+    }
+
+    if (card.href === "/customers") {
+      return { ...card, title: copy.workspaceTitles.customers, description: copy.workspaceDescriptions.customers, metric: copy.workspaceMetrics.profiles(formatNumber(card.metricValue || 0, language)) };
+    }
+
+    if (card.href === "/due") {
+      return { ...card, title: copy.workspaceTitles.due, description: copy.workspaceDescriptions.due, metric: formatCompactCurrency(card.metricValue || 0, language) };
+    }
+
+    if (card.href === "/warranty") {
+      return { ...card, title: copy.workspaceTitles.warranty, description: copy.workspaceDescriptions.warranty, metric: copy.workspaceMetrics.expiring(formatNumber(card.metricValue || 0, language)) };
+    }
+
+    return card;
+  });
+}
+
+function localizeActivityFeed(activityFeed, copy, language) {
+  if (language !== "bn") {
+    return activityFeed;
+  }
+
+  return activityFeed.map((item) => {
+    if (item.typeKey === "purchase") {
+      return {
+        ...item,
+        type: copy.activityTypes.purchase,
+        title: item.title || copy.activityLabels.purchaseTitleFallback,
+        detail: `${item.partyName || copy.activityLabels.supplierFallback} - ${formatNumber(item.quantity || 0, language)} ${copy.activityLabels.units}`,
+        value: formatCompactCurrency(item.amount || 0, language),
+      };
+    }
+
+    if (item.typeKey === "sale") {
+      return {
+        ...item,
+        type: copy.activityTypes.sale,
+        title: item.title || copy.activityLabels.customerFallback,
+        detail: `${item.reference || "-"} - ${formatNumber(item.quantity || 0, language)} ${copy.activityLabels.units}`,
+        value: formatCompactCurrency(item.amount || 0, language),
+      };
+    }
+
+    if (item.typeKey === "stock") {
+      return {
+        ...item,
+        type: copy.activityTypes.stock,
+        title: item.title || copy.activityLabels.stockTitleFallback,
+        detail: `${item.movementLabel || copy.activityTypes.stock} ${copy.activityLabels.adjustment}`,
+      };
+    }
+
+    return item;
+  });
+}
+
 export default function HomeOverviewClient(props) {
-  const [activeFilter, setActiveFilter] = useState("today");
-  const homeLanguage = "en";
+  const [activeFilter, setActiveFilter] = useState("all");
+  const { language } = usePurchaseLanguage();
+  const homeLanguage = language === "bn" ? "bn" : "en";
   const copy = HOME_TEXT[homeLanguage];
   const filters = FILTERS[homeLanguage];
   const {
@@ -282,11 +409,21 @@ export default function HomeOverviewClient(props) {
     topCategories,
   } = props;
 
+  const localizedWorkspaceCards = useMemo(
+    () => localizeWorkspaceCards(workspaceCards, copy, homeLanguage),
+    [workspaceCards, copy, homeLanguage],
+  );
+
+  const localizedActivityFeed = useMemo(
+    () => localizeActivityFeed(activityFeed, copy, homeLanguage),
+    [activityFeed, copy, homeLanguage],
+  );
+
   const filtered = useMemo(() => {
     const rangeStart = getRangeStart(activeFilter);
     const filteredPurchases = purchases.filter((item) => isWithinRange(item.createdAt, rangeStart));
     const filteredInvoices = invoices.filter((item) => isWithinRange(item.createdAt, rangeStart));
-    const filteredActivity = activityFeed.filter((item) => isWithinRange(item.createdAt, rangeStart));
+    const filteredActivity = localizedActivityFeed.filter((item) => isWithinRange(item.createdAt, rangeStart));
 
     const purchaseAmount = filteredPurchases.reduce((total, item) => total + Number(item.totalAmount || 0), 0);
     const expenseAmount = filteredPurchases.reduce((total, item) => total + Number(item.paymentAmount || 0), 0);
@@ -383,7 +520,7 @@ export default function HomeOverviewClient(props) {
       ],
       activity: filteredActivity.slice(0, 6),
     };
-  }, [activeFilter, activityFeed, copy, customers, dueSummary, homeLanguage, invoices, purchases, stockOverview, suppliers]);
+  }, [activeFilter, copy, customers, dueSummary, homeLanguage, invoices, localizedActivityFeed, purchases, stockOverview, suppliers]);
 
   return (
     <main className="home-dashboard home-dashboard-compact">
@@ -454,7 +591,7 @@ export default function HomeOverviewClient(props) {
             </div>
 
             <div className="home-quick-grid">
-              {workspaceCards.map((card) => {
+              {localizedWorkspaceCards.map((card) => {
                 const Icon = WORKSPACE_ICONS[card.iconKey] || DashboardIcon;
 
                 return (
@@ -525,7 +662,7 @@ export default function HomeOverviewClient(props) {
                     <span className="home-category-rank">0{index + 1}</span>
                     <div>
                       <strong>{name}</strong>
-                      <p>{formatNumber(total, homeLanguage)} products in catalog</p>
+                      <p>{copy.categoryProducts(formatNumber(total, homeLanguage))}</p>
                     </div>
                   </article>
                 ))

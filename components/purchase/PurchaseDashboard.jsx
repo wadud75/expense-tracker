@@ -335,7 +335,7 @@ export default function PurchaseDashboard() {
 
               return (
                 <button
-                  key={filter}
+                  key={filterKey}
                   type="button"
                   className={`filter-chip${activeQuickFilter === filterKey ? " active" : ""}`}
                   onClick={() => handleQuickFilterClick(filterKey)}

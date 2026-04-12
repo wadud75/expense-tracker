@@ -108,28 +108,38 @@ function getTopCategories(products) {
 function buildActivityFeed({ purchases, invoices, movements }) {
   const purchaseItems = purchases.slice(0, 6).map((purchase) => ({
     id: `purchase-${purchase._id}`,
+    typeKey: "purchase",
     type: "Purchase",
     title: purchase.productName || "New purchase recorded",
     detail: `${purchase.supplierName || "Supplier"} - ${Number(purchase.quantity || 0)} units`,
     value: formatCurrency(Number(purchase.quantity || 0) * Number(purchase.unitPrice || 0)),
+    partyName: purchase.supplierName || "Supplier",
+    quantity: Number(purchase.quantity || 0),
+    amount: Number(purchase.quantity || 0) * Number(purchase.unitPrice || 0),
     createdAt: purchase.createdAt,
   }));
 
   const invoiceItems = invoices.slice(0, 6).map((invoice) => ({
     id: `sale-${invoice.invoiceNo}`,
+    typeKey: "sale",
     type: "Sale",
     title: invoice.customerName,
     detail: `${invoice.invoiceNo} - ${invoice.quantity} units`,
     value: formatCurrency(invoice.total),
+    reference: invoice.invoiceNo,
+    quantity: Number(invoice.quantity || 0),
+    amount: Number(invoice.total || 0),
     createdAt: invoice.createdAt,
   }));
 
   const movementItems = movements.slice(0, 6).map((movement) => ({
     id: `movement-${movement.id}`,
+    typeKey: "stock",
     type: "Stock",
     title: movement.productName || "Stock movement",
     detail: `${movement.type.replace("_", " ")} adjustment`,
     value: `${movement.quantity > 0 ? "+" : ""}${movement.quantity}`,
+    movementLabel: movement.type.replace("_", " "),
     createdAt: movement.createdAt,
   }));
 
@@ -190,6 +200,7 @@ async function getHomeDashboardData() {
           description: "Master data, categories, suppliers, and setup controls.",
           iconKey: "dashboard",
           metric: `${formatNumber(masterRows.length)} records`,
+          metricValue: masterRows.length,
         },
         {
           href: "/purchase",
@@ -197,6 +208,7 @@ async function getHomeDashboardData() {
           description: "Record procurement and push stock into inventory.",
           iconKey: "purchase",
           metric: `${formatNumber(purchaseRows.length)} entries`,
+          metricValue: purchaseRows.length,
         },
         {
           href: "/sales",
@@ -204,6 +216,7 @@ async function getHomeDashboardData() {
           description: "Checkout counter, invoice creation, and live selling.",
           iconKey: "sales",
           metric: `${formatNumber(invoices.length)} invoices`,
+          metricValue: invoices.length,
         },
         {
           href: "/products",
@@ -211,6 +224,7 @@ async function getHomeDashboardData() {
           description: "Pricing, catalog control, and stock health.",
           iconKey: "products",
           metric: `${formatNumber(stockSnapshot.overview.totalProducts || 0)} items`,
+          metricValue: stockSnapshot.overview.totalProducts || 0,
         },
         {
           href: "/stock",
@@ -218,6 +232,7 @@ async function getHomeDashboardData() {
           description: "Manual stock adjustment and movement tracking.",
           iconKey: "stock",
           metric: `${formatNumber(stockSnapshot.overview.totalUnits || 0)} units`,
+          metricValue: stockSnapshot.overview.totalUnits || 0,
         },
         {
           href: "/customers",
@@ -225,6 +240,7 @@ async function getHomeDashboardData() {
           description: "Profiles, repeat buyers, and follow-up status.",
           iconKey: "customers",
           metric: `${formatNumber(customerRows.length)} profiles`,
+          metricValue: customerRows.length,
         },
         {
           href: "/due",
@@ -232,6 +248,7 @@ async function getHomeDashboardData() {
           description: "Receivable and payable monitoring across the business.",
           iconKey: "due",
           metric: formatCurrency(dueSnapshot.summary.overdueAmount || 0),
+          metricValue: dueSnapshot.summary.overdueAmount || 0,
         },
         {
           href: "/warranty",
@@ -239,6 +256,7 @@ async function getHomeDashboardData() {
           description: "Active, expiring, and manual warranty records.",
           iconKey: "warranty",
           metric: `${formatNumber(buildWarrantySummary(salesRows).expiring || 0)} expiring`,
+          metricValue: buildWarrantySummary(salesRows).expiring || 0,
         },
       ],
       activityFeed: buildActivityFeed({

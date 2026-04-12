@@ -8788,7 +8788,10 @@ body,
 }
 
 .home-overview-card {
+  min-width: 0;
+  height: 100%;
   padding: 18px 20px;
+  overflow: hidden;
   border-radius: 20px;
   border: 1px solid rgba(203, 213, 225, 0.78);
   box-shadow: 0 18px 34px rgba(15, 23, 42, 0.08);
@@ -8799,6 +8802,10 @@ body,
   grid-template-columns: 42px minmax(0, 1fr);
   gap: 12px;
   align-items: center;
+}
+
+.home-overview-card-head > div {
+  min-width: 0;
 }
 
 .home-overview-card-icon {
@@ -8825,14 +8832,17 @@ body,
   color: #51627f;
   font-size: 0.98rem;
   font-weight: 800;
+  line-height: 1.2;
 }
 
 .home-overview-card strong {
   display: block;
   margin-top: 4px;
   color: #0f172a;
-  font-size: 2rem;
-  line-height: 1;
+  font-size: clamp(1.45rem, 1rem + 1vw, 2rem);
+  line-height: 1.08;
+  white-space: nowrap;
+  letter-spacing: -0.03em;
 }
 
 .home-overview-card p {
@@ -8840,6 +8850,12 @@ body,
   color: #64748b;
   font-size: 0.84rem;
   font-weight: 700;
+  line-height: 1.35;
+}
+
+html[lang="bn"] .home-overview-card strong {
+  font-size: clamp(1.3rem, 0.95rem + 0.8vw, 1.8rem);
+  letter-spacing: -0.045em;
 }
 
 .home-overview-card-mint {
