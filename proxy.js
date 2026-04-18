@@ -71,6 +71,7 @@ function isProtectedPath(pathname) {
     pathname.startsWith("/admin") ||
     pathname.startsWith("/purchase") ||
     pathname.startsWith("/sales") ||
+    pathname.startsWith("/sellers") ||
     pathname.startsWith("/products") ||
     pathname.startsWith("/stock") ||
     pathname.startsWith("/due") ||

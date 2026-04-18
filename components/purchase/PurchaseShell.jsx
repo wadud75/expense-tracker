@@ -65,6 +65,10 @@ function getMenuHref(key) {
     return "/customers";
   }
 
+  if (key === "sellers") {
+    return "/sellers";
+  }
+
   return null;
 }
 
@@ -253,7 +257,7 @@ export default function PurchaseShell({ children }) {
               <span>{t.languageLabel}</span>
             </button>
             <button type="button" className="pill-button pill-logout" onClick={handleLogout} disabled={isLoggingOut}>
-              <span>{language === "bn" ? (isLoggingOut ? "লগআউট হচ্ছে..." : "লগআউট") : isLoggingOut ? "Logging out..." : "Logout"}</span>
+              <span>{isLoggingOut ? t.loggingOut || "Logging out..." : t.logout || "Logout"}</span>
             </button>
           </div>
         </header>
@@ -263,4 +267,3 @@ export default function PurchaseShell({ children }) {
     </main>
   );
 }
-

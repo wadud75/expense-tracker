@@ -12,8 +12,9 @@ import {
 const LANGUAGE_CHANGE_EVENT = "expense-tracker-language-change";
 
 export default function usePurchaseLanguage() {
-  const [language, setLanguage] = useState("en");
-  const languageRef = useRef("en");
+  const initialLanguage = detectLanguage();
+  const [language, setLanguage] = useState(initialLanguage);
+  const languageRef = useRef(initialLanguage);
   const updateLanguage = useCallback((nextLanguage) => {
     const resolvedLanguage =
       typeof nextLanguage === "function" ? nextLanguage(languageRef.current) : nextLanguage;
@@ -47,10 +48,7 @@ export default function usePurchaseLanguage() {
   }));
 
   useEffect(() => {
-    const nextLanguage = detectLanguage();
-    languageRef.current = nextLanguage;
-    setLanguage(nextLanguage);
-    document.documentElement.lang = nextLanguage;
+    document.documentElement.lang = languageRef.current;
   }, []);
 
   useEffect(() => {

@@ -29,6 +29,14 @@ function getCartItemMeta(product) {
   return product.categoryName || "General product";
 }
 
+function getSellerOptionLabel(seller) {
+  if (!seller) {
+    return "";
+  }
+
+  return seller.role ? `${seller.name} - ${seller.role}` : seller.name;
+}
+
 function roundCurrency(value) {
   return Math.round((Number(value) || 0) * 100) / 100;
 }
@@ -215,6 +223,7 @@ export default function SalesPosPage() {
   const payableAmount = Math.min(paidValue, cartSummary.subtotal);
   const balance = Math.max(cartSummary.subtotal - payableAmount, 0);
   const paidDisplayValue = payableAmount.toFixed(2);
+  const hasSellers = masterData.seller.length > 0;
 
   function addToCart(product) {
     setErrorMessage("");
@@ -576,10 +585,10 @@ export default function SalesPosPage() {
                         value={sellerName}
                         onChange={(event) => setSellerName(event.target.value)}
                       >
-                        <option value="">Select seller</option>
+                        <option value="">{hasSellers ? "Select seller" : "No seller found. Add one from Seller Management"}</option>
                         {masterData.seller.map((option) => (
                           <option key={option.id} value={option.name}>
-                            {option.name}
+                            {getSellerOptionLabel(option)}
                           </option>
                         ))}
                       </select>
@@ -587,6 +596,9 @@ export default function SalesPosPage() {
                         <ChevronDownIcon />
                       </span>
                     </div>
+                    <small className="sales-field-hint">
+                      Seller options come from <Link href="/sellers">Seller Management</Link>.
+                    </small>
                   </label>
 
                   <label className="purchase-field-stack sales-field-stack">

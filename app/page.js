@@ -20,6 +20,97 @@ function formatNumber(value) {
   }).format(Number(value) || 0);
 }
 
+function getMonthKey(date = new Date()) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  return `${year}-${month}`;
+}
+
+function extractSellerPaymentRecords(masterRows) {
+  return masterRows
+    .filter((item) => item.type === "seller")
+    .flatMap((seller) =>
+      Array.isArray(seller.salaryPayments)
+        ? seller.salaryPayments
+            .filter((entry) => entry?.monthKey)
+            .map((entry) => ({
+              sellerId: seller._id.toString(),
+              sellerName: seller.name || "Seller",
+              monthKey: entry.monthKey,
+              amount: Number(entry.amount ?? seller.salary ?? 0),
+              paidAt: entry.paidAt || null,
+            }))
+        : [],
+    );
+}
+
+function buildSellerPaymentSummary(masterRows, monthKey = getMonthKey()) {
+  const sellers = masterRows.filter((item) => item.type === "seller");
+
+  return sellers.reduce(
+    (summary, seller) => {
+      const salary = Number(seller.salary || 0);
+      const payment = Array.isArray(seller.salaryPayments)
+        ? seller.salaryPayments.find((entry) => entry?.monthKey === monthKey)
+        : null;
+
+      summary.totalSellers += 1;
+      summary.totalSalary += salary;
+
+      if (payment) {
+        summary.paidCount += 1;
+        summary.paidAmount += Number(payment.amount ?? salary);
+      } else {
+        summary.unpaidCount += 1;
+        summary.unpaidAmount += salary;
+      }
+
+      return summary;
+    },
+    {
+      monthKey,
+      totalSellers: 0,
+      totalSalary: 0,
+      paidCount: 0,
+      paidAmount: 0,
+      unpaidCount: 0,
+      unpaidAmount: 0,
+    },
+  );
+}
+
+function buildCapitalSummary(masterRows) {
+  const capitalEntries = masterRows.filter((item) => item.type === "capital");
+
+  return capitalEntries.reduce(
+    (summary, entry) => {
+      const amount = Number(entry.amount || 0);
+      summary.total += amount;
+      summary.entries += 1;
+
+      if (amount >= 0) {
+        summary.added += amount;
+      } else {
+        summary.removed += Math.abs(amount);
+      }
+
+      return summary;
+    },
+    { total: 0, added: 0, removed: 0, entries: 0 },
+  );
+}
+
+function extractCapitalRecords(masterRows) {
+  return masterRows
+    .filter((item) => item.type === "capital")
+    .map((item) => ({
+      id: item._id.toString(),
+      amount: Number(item.amount || 0),
+      note: item.note || "",
+      createdAt: item.createdAt || null,
+    }));
+}
+
 function groupSalesInvoices(rows) {
   return Object.values(
     rows.reduce((summary, sale) => {
@@ -164,6 +255,10 @@ async function getHomeDashboardData() {
       ]);
 
     const invoices = groupSalesInvoices(salesRows);
+    const sellerPaymentSummary = buildSellerPaymentSummary(masterRows);
+    const sellerPaymentRecords = extractSellerPaymentRecords(masterRows);
+    const capitalSummary = buildCapitalSummary(masterRows);
+    const capitalRecords = extractCapitalRecords(masterRows);
 
     return {
       error: "",
@@ -190,6 +285,10 @@ async function getHomeDashboardData() {
       suppliers: {
         total: masterRows.filter((item) => item.type === "supplier").length,
       },
+      sellerPaymentSummary,
+      sellerPaymentRecords,
+      capitalSummary,
+      capitalRecords,
       stockOverview: stockSnapshot.overview,
       dueSummary: dueSnapshot.summary,
       warrantySummary: buildWarrantySummary(salesRows),
@@ -217,6 +316,14 @@ async function getHomeDashboardData() {
           iconKey: "sales",
           metric: `${formatNumber(invoices.length)} invoices`,
           metricValue: invoices.length,
+        },
+        {
+          href: "/sellers",
+          title: "Sellers",
+          description: "Seller roster, performance, and monthly salary payment tracking.",
+          iconKey: "sellers",
+          metric: `${formatNumber(sellerPaymentSummary.paidCount)} paid`,
+          metricValue: sellerPaymentSummary.paidCount,
         },
         {
           href: "/products",
@@ -274,8 +381,20 @@ async function getHomeDashboardData() {
       invoices: [],
       customers: { total: 0, active: 0 },
       suppliers: { total: 0 },
+      sellerPaymentSummary: {
+        monthKey: getMonthKey(),
+        totalSellers: 0,
+        totalSalary: 0,
+        paidCount: 0,
+        paidAmount: 0,
+        unpaidCount: 0,
+        unpaidAmount: 0,
+      },
+      sellerPaymentRecords: [],
+      capitalSummary: { total: 0, added: 0, removed: 0, entries: 0 },
+      capitalRecords: [],
       stockOverview: { totalValue: 0, totalProducts: 0, totalUnits: 0 },
-      dueSummary: { totalReceivable: 0, overdueCount: 0, overdueAmount: 0 },
+      dueSummary: { totalReceivable: 0, totalPayable: 0, overdueCount: 0, overdueAmount: 0 },
       warrantySummary: { active: 0, expiring: 0, expired: 0 },
       workspaceCards: [
         {

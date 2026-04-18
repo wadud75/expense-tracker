@@ -70,27 +70,29 @@ const HOME_TEXT = {
       purchase: "Purchase Value",
       sales: "Sales Value",
       profit: "Realized Profit",
-      deposit: "Collection",
-      expense: "Purchase Payments",
+      deposit: "Sales Collection",
+      expense: "Tracked Cash Out",
       customers: "Total Customers",
       suppliers: "Total Suppliers",
+      sellerPayments: "Seller Payouts",
       receivable: "Receivable Due",
       stockValue: "Stock Cost Value",
-      cashBalance: "Total Cash Balance",
+      cashBalance: "Net Tracked Cash",
       businessValue: "Total Business Value",
     },
     subtitles: {
       purchaseEntries: (count) => `${count} entries`,
       salesEntries: (count, units) => `${count} sales • units ${units}`,
-      profit: "Realized only from completed sales",
-      deposit: "Without manual deposits",
-      expense: "Without manual expenses",
+      profit: "Only fully paid invoices are counted",
+      deposit: "Collected against sales invoices",
+      expense: "Purchase payments + seller payouts",
       activeCustomers: (count) => `${count} active customers`,
       purchaseRecords: (count) => `${count} purchase entries`,
+      sellerPayments: (count, total) => `${count} payouts • ${total}`,
       customerDue: (count) => `${count} customer accounts`,
       stockProducts: (count) => `${count} products in stock`,
-      cashBalance: "All collection - all expense",
-      businessValue: "Due + stock + cash",
+      cashBalance: "Sales collection - purchase payments - seller payouts + capital",
+      businessValue: "Stock + receivable + cash - payable",
     },
     categoryProducts: (count) => `${count} products in catalog`,
   },
@@ -124,26 +126,28 @@ const HOME_TEXT = {
       purchase: "ক্রয় মূল্য",
       sales: "বিক্রয় মূল্য",
       profit: "রিয়েলাইজড প্রফিট",
-      deposit: "মোট জমা",
-      expense: "ক্রয় পরিশোধ",
+      deposit: "বিক্রয় আদায়",
+      expense: "ট্র্যাকড ক্যাশ আউট",
       customers: "মোট কাস্টমার",
       suppliers: "মোট সাপ্লায়ার",
+      sellerPayments: "সেলার পেমেন্ট",
       receivable: "বকেয়া আদায়যোগ্য",
       stockValue: "স্টক ক্রয়মূল্য",
-      cashBalance: "সর্বমোট ক্যাশ ব্যালেন্স",
+      cashBalance: "নেট ট্র্যাকড ক্যাশ",
       businessValue: "মোট ব্যবসার মূল্য",
     },
     subtitles: {
       purchaseEntries: (count) => `${count} টি এন্ট্রি`,
       salesEntries: (count, units) => `${count} টি বিক্রয় • পণ্য ${units}`,
-      profit: "বিক্রয় মূল্য - ক্রয় মূল্য - মার্জিন",
-      deposit: "ম্যানুয়াল জমা ছাড়া",
-      expense: "ম্যানুয়াল খরচ ছাড়া",
+      profit: "শুধু সম্পূর্ণ পরিশোধিত ইনভয়েস ধরা হয়েছে",
+      deposit: "শুধু সেলস ইনভয়েস থেকে আদায়",
+      expense: "ক্রয় পরিশোধ + সেলার পেমেন্ট",
       activeCustomers: (count) => `${count} জন সক্রিয় কাস্টমার`,
       purchaseRecords: (count) => `${count} টি ক্রয় এন্ট্রি`,
+      sellerPayments: (count, total) => `${count} টি পেমেন্ট • ${total}`,
       customerDue: (count) => `${count} জন কাস্টমারের কাছে`,
       stockProducts: (count) => `${count} টি পণ্য স্টকে`,
-      cashBalance: "সব আয় - সব ব্যয়",
+      cashBalance: "বিক্রয় আদায় - ক্রয় পরিশোধ - সেলার পেমেন্ট + ক্যাপিটাল",
       businessValue: "বকেয়া + স্টক + ক্যাশ - প্রদেয়",
     },
     activityTypes: {
@@ -165,6 +169,7 @@ const HOME_TEXT = {
       sales: "সেলস / পিওএস",
       products: "পণ্য",
       stock: "স্টক",
+      sellers: "সেলার",
       customers: "কাস্টমার",
       due: "বকেয়া ব্যবস্থাপনা",
       warranty: "ওয়ারেন্টি",
@@ -175,6 +180,7 @@ const HOME_TEXT = {
       sales: "বিক্রয়, ইনভয়েস ও লাইভ কাউন্টার পরিচালনা করুন।",
       products: "ক্যাটালগ, মূল্য ও স্টক হেলথ নিয়ন্ত্রণ করুন।",
       stock: "স্টক এডজাস্টমেন্ট ও মুভমেন্ট দেখুন।",
+      sellers: "সেলার রোস্টার, পারফরম্যান্স ও মাসিক পেমেন্ট ট্র্যাক করুন।",
       customers: "প্রোফাইল, রিপিট কাস্টমার ও ফলো-আপ ট্র্যাক করুন।",
       due: "আদায়যোগ্য ও প্রদেয় বকেয়া পর্যবেক্ষণ করুন।",
       warranty: "সক্রিয়, মেয়াদোত্তীর্ণ ও ম্যানুয়াল ওয়ারেন্টি দেখুন।",
@@ -185,6 +191,7 @@ const HOME_TEXT = {
       invoices: (count) => `${count} টি ইনভয়েস`,
       items: (count) => `${count} টি আইটেম`,
       units: (count) => `${count} টি ইউনিট`,
+      paid: (count) => `${count} জন পরিশোধিত`,
       profiles: (count) => `${count} টি প্রোফাইল`,
       expiring: (count) => `${count} টি মেয়াদ শেষের পথে`,
     },
@@ -198,6 +205,7 @@ const WORKSPACE_ICONS = {
   sales: ReceiptIcon,
   products: BoxIcon,
   stock: ChartIcon,
+  sellers: StoreIcon,
   customers: CustomerIcon,
   due: MoneyIcon,
   warranty: LedgerIcon,
@@ -307,6 +315,10 @@ function isWithinRange(value, rangeStart) {
   return !Number.isNaN(date.getTime()) && date.getTime() >= rangeStart.getTime();
 }
 
+function isInvoiceSettled(invoice) {
+  return Number(invoice?.paidAmount || 0) >= Number(invoice?.total || 0);
+}
+
 function localizeWorkspaceCards(workspaceCards, copy, language) {
   if (language !== "bn") {
     return workspaceCards;
@@ -335,6 +347,10 @@ function localizeWorkspaceCards(workspaceCards, copy, language) {
 
     if (card.href === "/customers") {
       return { ...card, title: copy.workspaceTitles.customers, description: copy.workspaceDescriptions.customers, metric: copy.workspaceMetrics.profiles(formatNumber(card.metricValue || 0, language)) };
+    }
+
+    if (card.href === "/sellers") {
+      return { ...card, title: copy.workspaceTitles.sellers, description: copy.workspaceDescriptions.sellers, metric: copy.workspaceMetrics.paid(formatNumber(card.metricValue || 0, language)) };
     }
 
     if (card.href === "/due") {
@@ -401,6 +417,9 @@ export default function HomeOverviewClient(props) {
     invoices,
     customers,
     suppliers,
+    sellerPaymentSummary,
+    sellerPaymentRecords,
+    capitalRecords,
     stockOverview,
     dueSummary,
     warrantySummary,
@@ -423,17 +442,26 @@ export default function HomeOverviewClient(props) {
     const rangeStart = getRangeStart(activeFilter);
     const filteredPurchases = purchases.filter((item) => isWithinRange(item.createdAt, rangeStart));
     const filteredInvoices = invoices.filter((item) => isWithinRange(item.createdAt, rangeStart));
+    const filteredSettledInvoices = filteredInvoices.filter(isInvoiceSettled);
+    const filteredSellerPayments = sellerPaymentRecords.filter((item) => isWithinRange(item.paidAt, rangeStart));
+    const filteredCapitalRecords = capitalRecords.filter((item) => isWithinRange(item.createdAt, rangeStart));
     const filteredActivity = localizedActivityFeed.filter((item) => isWithinRange(item.createdAt, rangeStart));
 
     const purchaseAmount = filteredPurchases.reduce((total, item) => total + Number(item.totalAmount || 0), 0);
-    const expenseAmount = filteredPurchases.reduce((total, item) => total + Number(item.paymentAmount || 0), 0);
+    const purchasePaymentAmount = filteredPurchases.reduce((total, item) => total + Number(item.paymentAmount || 0), 0);
     const salesAmount = filteredInvoices.reduce((total, item) => total + Number(item.total || 0), 0);
-    const profitAmount = filteredInvoices.reduce((total, item) => total + Number(item.profitAmount || 0), 0);
+    const profitAmount = filteredSettledInvoices.reduce((total, item) => total + Number(item.profitAmount || 0), 0);
     const collectedAmount = filteredInvoices.reduce((total, item) => total + Number(item.paidAmount || 0), 0);
+    const sellerPaymentAmount = filteredSellerPayments.reduce((total, item) => total + Number(item.amount || 0), 0);
+    const capitalAmount = filteredCapitalRecords.reduce((total, item) => total + Number(item.amount || 0), 0);
+    const expenseAmount = purchasePaymentAmount + sellerPaymentAmount;
     const unitsSold = filteredInvoices.reduce((total, item) => total + Number(item.quantity || 0), 0);
-    const cashBalance = collectedAmount - expenseAmount;
+    const cashBalance = collectedAmount - expenseAmount + capitalAmount;
     const businessAssetValue =
-      (stockOverview.totalValue || 0) + Math.max(cashBalance, 0) + (dueSummary.totalReceivable || 0);
+      (stockOverview.totalValue || 0) +
+      cashBalance +
+      (dueSummary.totalReceivable || 0) -
+      (dueSummary.totalPayable || 0);
 
     return {
       cards: [
@@ -490,6 +518,16 @@ export default function HomeOverviewClient(props) {
           tone: "peach",
         },
         {
+          title: copy.cards.sellerPayments,
+          value: formatCompactCurrency(sellerPaymentAmount || 0, homeLanguage),
+          subtitle: copy.subtitles.sellerPayments(
+            formatNumber(filteredSellerPayments.length || 0, homeLanguage),
+            formatNumber(sellerPaymentSummary.totalSellers || 0, homeLanguage),
+          ),
+          icon: MoneyIcon,
+          tone: "amber",
+        },
+        {
           title: copy.cards.receivable,
           value: formatCompactCurrency(dueSummary.totalReceivable || 0, homeLanguage),
           subtitle: copy.subtitles.customerDue(formatNumber(dueSummary.overdueCount || 0, homeLanguage)),
@@ -520,7 +558,7 @@ export default function HomeOverviewClient(props) {
       ],
       activity: filteredActivity.slice(0, 6),
     };
-  }, [activeFilter, copy, customers, dueSummary, homeLanguage, invoices, localizedActivityFeed, purchases, stockOverview, suppliers]);
+  }, [activeFilter, capitalRecords, copy, customers, dueSummary, homeLanguage, invoices, localizedActivityFeed, purchases, sellerPaymentRecords, sellerPaymentSummary.totalSellers, stockOverview, suppliers]);
 
   return (
     <main className="home-dashboard home-dashboard-compact">
