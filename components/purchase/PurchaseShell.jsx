@@ -143,6 +143,15 @@ export default function PurchaseShell({ children }) {
     window.localStorage.setItem(THEME_STORAGE_KEY, theme);
   }, [theme]);
 
+  const footerLinks = [
+    { href: "/admin", label: "Admin" },
+    { href: "/purchase", label: "Purchase" },
+    { href: "/sales", label: "Sales" },
+    { href: "/products", label: "Products" },
+    { href: "/customers", label: "Customers" },
+    { href: "/sellers", label: "Sellers" },
+  ];
+
   return (
     <main className="dashboard-shell">
       <div
@@ -263,6 +272,44 @@ export default function PurchaseShell({ children }) {
         </header>
 
         {children}
+
+        <footer className="dashboard-footer">
+          <div className="dashboard-footer-shell">
+            <div className="dashboard-footer-brand">
+              <span className="dashboard-footer-kicker">Operations Hub</span>
+              <h2>Power Link</h2>
+              <p>
+                Built for daily purchase flow, seller operations, stock visibility, and cleaner business control
+                across desktop and mobile.
+              </p>
+            </div>
+
+            <div className="dashboard-footer-links">
+              <span className="dashboard-footer-heading">Workspace</span>
+              <div className="dashboard-footer-link-grid">
+                {footerLinks.map((item) => (
+                  <Link key={item.href} href={item.href} className="dashboard-footer-link">
+                    {item.label}
+                  </Link>
+                ))}
+              </div>
+            </div>
+
+            <div className="dashboard-footer-status">
+              <span className="dashboard-footer-heading">System</span>
+              <div className="dashboard-footer-badges">
+                <span className="dashboard-footer-badge">Admin secured</span>
+                <span className="dashboard-footer-badge">Mobile ready</span>
+                <span className="dashboard-footer-badge">Live workspace</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="dashboard-footer-bottom">
+            <span>© {new Date().getFullYear()} Power Link</span>
+            <span>Inventory, sales, due, warranty, and seller management</span>
+          </div>
+        </footer>
       </section>
     </main>
   );
