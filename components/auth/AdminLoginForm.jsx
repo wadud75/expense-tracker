@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import usePurchaseLanguage from "@/components/purchase/usePurchaseLanguage";
 
 const LOGIN_TEXT = {
@@ -32,7 +32,6 @@ const LOGIN_TEXT = {
 };
 
 export default function AdminLoginForm() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const { language } = usePurchaseLanguage();
   const copy = LOGIN_TEXT[language === "bn" ? "bn" : "en"];
@@ -62,8 +61,8 @@ export default function AdminLoginForm() {
       }
 
       const nextPath = searchParams.get("next");
-      router.push(nextPath && nextPath.startsWith("/") ? nextPath : "/");
-      router.refresh();
+      const destination = nextPath && nextPath.startsWith("/") ? nextPath : "/";
+      window.location.replace(destination);
     } catch (error) {
       setErrorMessage(error.message || "Login failed.");
     } finally {
