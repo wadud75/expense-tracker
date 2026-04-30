@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import clientPromise from "@/lib/mongodb";
 import { requireAdminRequest } from "@/lib/server-auth";
 
-const MASTER_DATA_TYPES = ["category", "supplier", "brand", "model", "variant", "seller", "capital"];
+const MASTER_DATA_TYPES = ["category", "supplier", "brand", "model", "variant", "bank", "seller", "capital"];
 const SELLER_ROLES = ["sales executive", "manager", "cashier", "support", "owner", "other"];
 const SELLER_STATUSES = ["active", "inactive", "on-leave"];
 const SALARY_PAYMENT_ACTIONS = ["pay", "unpay"];
@@ -85,6 +85,7 @@ function mapEntry(entry) {
       ...baseItem,
       amount: normalizeAmount(entry.amount || 0),
       note: entry.note || "",
+      account: entry.account || "cash",
       createdAt: entry.createdAt || null,
       updatedAt: entry.updatedAt || null,
     };
@@ -112,6 +113,7 @@ function mapEntry(entry) {
 function buildCapitalDocument(payload, existing = {}) {
   const amount = normalizeAmount(payload.amount ?? existing.amount ?? 0);
   const note = normalizeText(payload.note ?? existing.note ?? "");
+  const account = normalizeText(payload.account ?? existing.account ?? "cash") || "cash";
   const name = normalizeName(
     payload.name ||
       existing.name ||
@@ -123,6 +125,7 @@ function buildCapitalDocument(payload, existing = {}) {
     normalizedName: name.toLowerCase(),
     amount,
     note,
+    account,
   };
 }
 

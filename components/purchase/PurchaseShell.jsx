@@ -30,7 +30,7 @@ function SunIcon() {
 
 function getMenuHref(key) {
   if (key === "dashboard") {
-    return "/admin";
+    return "/dashboard";
   }
 
   if (key === "productList") {
@@ -105,7 +105,7 @@ export default function PurchaseShell({ children }) {
         method: "POST",
       });
     } finally {
-      router.push("/admin/login");
+      router.push("/dashboard/login");
       router.refresh();
       setIsLoggingOut(false);
     }
@@ -142,15 +142,6 @@ export default function PurchaseShell({ children }) {
     document.documentElement.dataset.theme = theme;
     window.localStorage.setItem(THEME_STORAGE_KEY, theme);
   }, [theme]);
-
-  const footerLinks = [
-    { href: "/admin", label: "Admin" },
-    { href: "/purchase", label: "Purchase" },
-    { href: "/sales", label: "Sales" },
-    { href: "/products", label: "Products" },
-    { href: "/customers", label: "Customers" },
-    { href: "/sellers", label: "Sellers" },
-  ];
 
   return (
     <main className="dashboard-shell">
@@ -284,25 +275,6 @@ export default function PurchaseShell({ children }) {
               </p>
             </div>
 
-            <div className="dashboard-footer-links">
-              <span className="dashboard-footer-heading">Workspace</span>
-              <div className="dashboard-footer-link-grid">
-                {footerLinks.map((item) => (
-                  <Link key={item.href} href={item.href} className="dashboard-footer-link">
-                    {item.label}
-                  </Link>
-                ))}
-              </div>
-            </div>
-
-            <div className="dashboard-footer-status">
-              <span className="dashboard-footer-heading">System</span>
-              <div className="dashboard-footer-badges">
-                <span className="dashboard-footer-badge">Admin secured</span>
-                <span className="dashboard-footer-badge">Mobile ready</span>
-                <span className="dashboard-footer-badge">Live workspace</span>
-              </div>
-            </div>
           </div>
 
           <div className="dashboard-footer-bottom">

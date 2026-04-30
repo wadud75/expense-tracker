@@ -1,17 +1,16 @@
 ﻿"use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import usePurchaseLanguage from "@/components/purchase/usePurchaseLanguage";
-import { uploadToImageKit } from "@/lib/uploadToImageKit";
 
 const PAYMENT_METHODS = ["Cash", "Bank", "Card", "Mobile Banking"];
 const EMPTY_MASTER_DATA = {
   category: [],
   supplier: [],
   brand: [],
+  model: [],
   variant: [],
 };
 
@@ -20,6 +19,96 @@ function ChevronDownIcon() {
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="M6 9l6 6 6-6" />
     </svg>
+  );
+}
+
+function CloseIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M18 6 6 18" />
+      <path d="m6 6 12 12" />
+    </svg>
+  );
+}
+
+function MasterDataDropdownField({
+  label,
+  name,
+  value,
+  onValueChange,
+  options,
+  required = false,
+  onAdd,
+  addDisabled = false,
+  addLabel = "Add",
+  inputPlaceholder = "",
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const normalizedValue = String(value || "").trim().toLowerCase();
+  const filteredOptions = options.filter((option) => option.name.toLowerCase().includes(normalizedValue));
+  const hasMatchingOption = options.some((option) => option.name.trim().toLowerCase() === normalizedValue);
+  const shouldShowAddButton = normalizedValue.length > 0 && !hasMatchingOption;
+  const shouldShowOptions = isOpen && filteredOptions.length > 0;
+
+  return (
+    <label className="purchase-field-stack">
+      <span>{label}</span>
+      <div className="supplier-field-row">
+        <div className="purchase-master-field">
+          <input
+            className="purchase-input purchase-select-input"
+            type="text"
+            name={name}
+            value={value}
+            onChange={(event) => {
+              onValueChange(event.target.value);
+              setIsOpen(true);
+            }}
+            onFocus={() => setIsOpen(true)}
+            onBlur={() => {
+              setTimeout(() => setIsOpen(false), 120);
+            }}
+            placeholder={inputPlaceholder}
+            required={required}
+            autoComplete="off"
+            onKeyDown={(event) => {
+              if (event.key === "Enter" && shouldShowAddButton && !addDisabled) {
+                event.preventDefault();
+                onAdd();
+              }
+            }}
+          />
+          <span className="purchase-select-arrow" aria-hidden="true">
+            <ChevronDownIcon />
+          </span>
+          {shouldShowOptions ? (
+            <div className="purchase-master-options">
+              {filteredOptions.slice(0, 20).map((option) => (
+                <button
+                  key={option.id}
+                  type="button"
+                  className="purchase-master-option"
+                  onMouseDown={(event) => {
+                    event.preventDefault();
+                    onValueChange(option.name);
+                    setIsOpen(false);
+                  }}
+                >
+                  {option.name}
+                </button>
+              ))}
+            </div>
+          ) : null}
+        </div>
+        {shouldShowAddButton ? (
+          <button type="button" className="purchase-ghost-button" onClick={onAdd} disabled={addDisabled}>
+            {addLabel}
+          </button>
+        ) : (
+          <div aria-hidden="true" />
+        )}
+      </div>
+    </label>
   );
 }
 
@@ -46,11 +135,11 @@ function DropdownField({ label, value, name, onChange, children, required = fals
 }
 
 function PurchaseFormContent({ modal, t, router }) {
-  const fileInputRef = useRef(null);
   const [formState, setFormState] = useState({
     supplierName: "",
     productName: "",
     brandName: "",
+    modelName: "",
     variantName: "",
     categoryName: "",
     quantity: "1",
@@ -60,9 +149,8 @@ function PurchaseFormContent({ modal, t, router }) {
     notes: "",
   });
   const [masterData, setMasterData] = useState(EMPTY_MASTER_DATA);
-  const [selectedFile, setSelectedFile] = useState(null);
-  const [previewUrl, setPreviewUrl] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [savingMasterType, setSavingMasterType] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
 
   const quantity = Math.max(Number(formState.quantity) || 0, 0);
@@ -107,15 +195,64 @@ function PurchaseFormContent({ modal, t, router }) {
     }));
   };
 
-  const handleFileChange = (event) => {
-    const file = event.target.files?.[0];
-    if (!file) {
+  async function handleAddMasterItem(type, fieldName, label) {
+    const normalizedName = String(formState[fieldName] || "").trim();
+    if (!normalizedName) {
+      setErrorMessage(`${label} name is required.`);
       return;
     }
 
-    setSelectedFile(file);
-    setPreviewUrl(URL.createObjectURL(file));
-  };
+    setErrorMessage("");
+    setSavingMasterType(type);
+
+    try {
+      const response = await fetch("/api/master-data", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          type,
+          name: normalizedName,
+        }),
+      });
+      const result = await response.json();
+
+      let savedItem = null;
+      if (!response.ok) {
+        if (response.status === 409 && result.item) {
+          savedItem = result.item;
+        } else {
+          throw new Error(result.error || `Failed to save ${label.toLowerCase()}.`);
+        }
+      } else {
+        savedItem = result.item;
+      }
+
+      if (!savedItem) {
+        throw new Error(`Failed to save ${label.toLowerCase()}.`);
+      }
+
+      setMasterData((currentValue) => {
+        const currentItems = Array.isArray(currentValue[type]) ? currentValue[type] : [];
+        const alreadyExists = currentItems.some((entry) => entry.id === savedItem.id);
+        const nextItems = alreadyExists ? currentItems : [...currentItems, savedItem];
+
+        return {
+          ...currentValue,
+          [type]: [...nextItems].sort((left, right) => left.name.localeCompare(right.name)),
+        };
+      });
+      setFormState((currentValue) => ({
+        ...currentValue,
+        [fieldName]: "",
+      }));
+    } catch (error) {
+      setErrorMessage(error.message || `Failed to save ${label.toLowerCase()}.`);
+    } finally {
+      setSavingMasterType("");
+    }
+  }
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -123,15 +260,6 @@ function PurchaseFormContent({ modal, t, router }) {
     setIsSubmitting(true);
 
     try {
-      let uploadResult = null;
-
-      if (selectedFile) {
-        uploadResult = await uploadToImageKit(selectedFile, {
-          folder: "/purchases",
-          fileName: `purchase-${Date.now()}`,
-        });
-      }
-
       const response = await fetch("/api/purchases", {
         method: "POST",
         headers: {
@@ -141,6 +269,7 @@ function PurchaseFormContent({ modal, t, router }) {
           supplierName: formState.supplierName,
           productName: formState.productName,
           brandName: formState.brandName,
+          modelName: formState.modelName,
           variantName: formState.variantName,
           categoryName: formState.categoryName,
           quantity,
@@ -148,8 +277,6 @@ function PurchaseFormContent({ modal, t, router }) {
           paymentMethod: formState.paymentMethod,
           paymentAmount,
           notes: formState.notes,
-          imageUrl: uploadResult?.url || "",
-          imageFileId: uploadResult?.fileId || "",
         }),
       });
 
@@ -185,73 +312,30 @@ function PurchaseFormContent({ modal, t, router }) {
             <h1>{t.newPurchaseTitle}</h1>
           </div>
         </div>
-        <span className="purchase-item-pill">{t.itemsCount}</span>
+        {modal ? (
+          <button type="button" className="purchase-modal-close-button" onClick={() => router.back()} aria-label="Close">
+            <CloseIcon />
+          </button>
+        ) : null}
       </header>
 
       <div className="purchase-modal-body">
         <section className="purchase-form-grid">
           <div className="purchase-form-main">
-            <section className="purchase-panel purchase-panel-supplier">
-              <div className="purchase-panel-head">
-                <div className="purchase-panel-icon">S</div>
-                <div>
-                  <h2>{t.supplierTitle}</h2>
-                  <p>{t.supplierSubtitle}</p>
-                </div>
-              </div>
-              <DropdownField label={t.supplierTitle} name="supplierName" value={formState.supplierName} onChange={handleChange} required>
-                <option value="">{t.selectSupplier}</option>
-                {masterData.supplier.map((option) => (
-                  <option key={option.id} value={option.name}>
-                    {option.name}
-                  </option>
-                ))}
-              </DropdownField>
-            </section>
-
             <section className="purchase-panel purchase-panel-items">
-              <div className="purchase-panel-head">
-                <div className="purchase-panel-icon purchase-panel-icon-blue">P</div>
-                <div>
-                  <h2>{t.productTitle}</h2>
-                  <p>{t.productSubtitle}</p>
-                </div>
-              </div>
-
-              <div className="purchase-grid purchase-grid-two purchase-grid-balanced">
-                <section className="purchase-image-panel">
-                  <div className="purchase-image-copy">
-                    <h3>{t.imagePanelTitle}</h3>
-                    <p>{t.imagePanelSubtitle}</p>
-                  </div>
-
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    className="purchase-file-input"
-                    onChange={handleFileChange}
+              <div className="purchase-details-stack">
+                  <MasterDataDropdownField
+                    label={t.supplierTitle}
+                    name="supplierName"
+                    value={formState.supplierName}
+                    onValueChange={(nextValue) => handleChange({ target: { name: "supplierName", value: nextValue } })}
+                    required
+                    options={masterData.supplier}
+                    onAdd={() => handleAddMasterItem("supplier", "supplierName", t.supplierTitle)}
+                    addDisabled={savingMasterType === "supplier"}
+                    addLabel={savingMasterType === "supplier" ? t.adminLoading : t.adminAdd}
+                    inputPlaceholder={t.supplierPlaceholder}
                   />
-                  <button
-                    type="button"
-                    className="purchase-image-dropzone purchase-image-dropzone-large"
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    {previewUrl ? (
-                      <Image
-                        src={previewUrl}
-                        alt="Preview"
-                        width={220}
-                        height={220}
-                        className="purchase-image-preview"
-                      />
-                    ) : (
-                      <span>{t.image}</span>
-                    )}
-                  </button>
-                </section>
-
-                <div className="purchase-details-stack">
                   <label className="purchase-field-stack">
                     <span>{t.product}</span>
                     <input
@@ -266,32 +350,54 @@ function PurchaseFormContent({ modal, t, router }) {
                   </label>
 
                   <div className="purchase-grid purchase-grid-two purchase-grid-tight">
-                    <DropdownField label={t.categoryName} name="categoryName" value={formState.categoryName} onChange={handleChange} required>
-                      <option value="">{t.categoryPlaceholder}</option>
-                      {masterData.category.map((option) => (
-                        <option key={option.id} value={option.name}>
-                          {option.name}
-                        </option>
-                      ))}
-                    </DropdownField>
-                    <DropdownField label={t.brandName} name="brandName" value={formState.brandName} onChange={handleChange}>
-                      <option value="">{t.selectBrand}</option>
-                      {masterData.brand.map((option) => (
-                        <option key={option.id} value={option.name}>
-                          {option.name}
-                        </option>
-                      ))}
-                    </DropdownField>
+                    <MasterDataDropdownField
+                      label={t.categoryName}
+                      name="categoryName"
+                      value={formState.categoryName}
+                      onValueChange={(nextValue) => handleChange({ target: { name: "categoryName", value: nextValue } })}
+                      required
+                      options={masterData.category}
+                      onAdd={() => handleAddMasterItem("category", "categoryName", t.categoryName)}
+                      addDisabled={savingMasterType === "category"}
+                      addLabel={savingMasterType === "category" ? t.adminLoading : t.adminAdd}
+                      inputPlaceholder={t.categoryPlaceholder}
+                    />
+                    <MasterDataDropdownField
+                      label={t.brandName}
+                      name="brandName"
+                      value={formState.brandName}
+                      onValueChange={(nextValue) => handleChange({ target: { name: "brandName", value: nextValue } })}
+                      options={masterData.brand}
+                      onAdd={() => handleAddMasterItem("brand", "brandName", t.brandName)}
+                      addDisabled={savingMasterType === "brand"}
+                      addLabel={savingMasterType === "brand" ? t.adminLoading : t.adminAdd}
+                      inputPlaceholder={t.brandPlaceholder}
+                    />
                   </div>
-
-                  <DropdownField label={t.variantName} name="variantName" value={formState.variantName} onChange={handleChange}>
-                    <option value="">{t.selectVariant}</option>
-                    {masterData.variant.map((option) => (
-                      <option key={option.id} value={option.name}>
-                        {option.name}
-                      </option>
-                    ))}
-                  </DropdownField>
+                  <div className="purchase-grid purchase-grid-two purchase-grid-tight">
+                    <MasterDataDropdownField
+                      label="Color"
+                      name="modelName"
+                      value={formState.modelName}
+                      onValueChange={(nextValue) => handleChange({ target: { name: "modelName", value: nextValue } })}
+                      options={masterData.model}
+                      onAdd={() => handleAddMasterItem("model", "modelName", "Color")}
+                      addDisabled={savingMasterType === "model"}
+                      addLabel={savingMasterType === "model" ? t.adminLoading : t.adminAdd}
+                      inputPlaceholder="Type or select color"
+                    />
+                    <MasterDataDropdownField
+                      label={t.variantName}
+                      name="variantName"
+                      value={formState.variantName}
+                      onValueChange={(nextValue) => handleChange({ target: { name: "variantName", value: nextValue } })}
+                      options={masterData.variant}
+                      onAdd={() => handleAddMasterItem("variant", "variantName", t.variantName)}
+                      addDisabled={savingMasterType === "variant"}
+                      addLabel={savingMasterType === "variant" ? t.adminLoading : t.adminAdd}
+                      inputPlaceholder={t.variantPlaceholder}
+                    />
+                  </div>
 
                   <div className="purchase-grid purchase-grid-two purchase-grid-tight">
                     <label className="purchase-field-stack">
@@ -313,7 +419,7 @@ function PurchaseFormContent({ modal, t, router }) {
                         className="purchase-input"
                         type="number"
                         min="0"
-                        step="0.01"
+                        step="1"
                         name="unitPrice"
                         value={formState.unitPrice}
                         onChange={handleChange}
@@ -321,21 +427,7 @@ function PurchaseFormContent({ modal, t, router }) {
                       />
                     </label>
                   </div>
-                </div>
               </div>
-            </section>
-
-            <section className="purchase-panel purchase-panel-notes">
-              <label className="purchase-field-stack">
-                <span>{t.notes}</span>
-                <textarea
-                  className="purchase-textarea"
-                  name="notes"
-                  value={formState.notes}
-                  onChange={handleChange}
-                  placeholder={t.notesPlaceholder}
-                />
-              </label>
             </section>
 
             {errorMessage ? <p className="purchase-feedback purchase-feedback-error">{errorMessage}</p> : null}
@@ -365,7 +457,7 @@ function PurchaseFormContent({ modal, t, router }) {
                     className="purchase-input"
                     type="number"
                     min="0"
-                    step="0.01"
+                    step="1"
                     name="paymentAmount"
                     value={formState.paymentAmount}
                     onChange={handleChange}
@@ -377,12 +469,12 @@ function PurchaseFormContent({ modal, t, router }) {
               <div className="purchase-summary-stack">
                 <div className="purchase-summary-bar">
                   <span>{t.estimatedTotal}</span>
-                  <strong>{estimatedTotal.toFixed(2)}</strong>
+                  <strong>{estimatedTotal.toFixed(0)}</strong>
                 </div>
 
                 <div className="purchase-summary-bar purchase-summary-paid">
                   <span>{t.paymentBalance}</span>
-                  <strong>{remainingBalance.toFixed(2)}</strong>
+                  <strong>{remainingBalance.toFixed(0)}</strong>
                 </div>
               </div>
             </section>
@@ -402,7 +494,7 @@ function PurchaseFormContent({ modal, t, router }) {
         )}
         <div className="purchase-footer-total">
           <span>{t.estimatedTotal}</span>
-          <strong>{estimatedTotal.toFixed(2)}</strong>
+          <strong>{estimatedTotal.toFixed(0)}</strong>
         </div>
         <div className="purchase-footer-actions">
           <button type="submit" className="purchase-primary-action" disabled={isSubmitting}>

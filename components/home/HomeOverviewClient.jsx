@@ -325,7 +325,7 @@ function localizeWorkspaceCards(workspaceCards, copy, language) {
   }
 
   return workspaceCards.map((card) => {
-    if (card.href === "/admin") {
+    if (card.href === "/dashboard") {
       return { ...card, title: copy.workspaceTitles.admin, description: copy.workspaceDescriptions.admin, metric: copy.workspaceMetrics.records(formatNumber(card.metricValue || 0, language)) };
     }
 

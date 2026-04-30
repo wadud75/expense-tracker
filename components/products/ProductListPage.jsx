@@ -10,6 +10,7 @@ import StackIcon from "@/components/svgs/StackIcon";
 import StoreIcon from "@/components/svgs/StoreIcon";
 import TakaIcon from "@/components/svgs/TakaIcon";
 import WarningIcon from "@/components/svgs/WarningIcon";
+import { formatListDateTime } from "@/lib/dateFormat";
 
 const STOCK_FILTERS = [
   { key: "all", label: "All Products" },
@@ -37,19 +38,6 @@ function formatCurrency(value) {
 
 function formatNumber(value) {
   return new Intl.NumberFormat("en-US").format(Number(value) || 0);
-}
-
-function formatDate(value) {
-  const date = new Date(value);
-  return Number.isNaN(date.getTime())
-    ? "-"
-    : new Intl.DateTimeFormat("en-US", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-        hour: "numeric",
-        minute: "2-digit",
-      }).format(date);
 }
 
 function getStockTone(stock) {
@@ -465,7 +453,7 @@ export default function ProductListPage() {
                         <strong>{formatNumber(stock)} units</strong>
                         <span className={`stock-level-badge stock-level-${stockTone}`}>{getStockLabel(stock)}</span>
                       </div>
-                      <span>{formatDate(product.updatedAt)}</span>
+                      <span>{formatListDateTime(product.updatedAt)}</span>
                       <div className="product-actions-cell">
                         <button type="button" className="product-action-button product-action-edit" onClick={() => openEditModal(product)}>
                           Edit
@@ -510,7 +498,7 @@ export default function ProductListPage() {
                         </div>
                         <div>
                           <span>Updated</span>
-                          <strong>{formatDate(product.updatedAt)}</strong>
+                          <strong>{formatListDateTime(product.updatedAt)}</strong>
                         </div>
                       </div>
 
@@ -576,7 +564,7 @@ export default function ProductListPage() {
                 </label>
                 <label className="purchase-field-stack">
                   <span>Unit Price</span>
-                  <input className="purchase-input" type="number" min="0" step="0.01" value={editForm.unitPrice} onChange={(event) => setEditForm((current) => ({ ...current, unitPrice: event.target.value }))} required />
+                  <input className="purchase-input" type="number" min="0" step="1" value={editForm.unitPrice} onChange={(event) => setEditForm((current) => ({ ...current, unitPrice: event.target.value }))} required />
                 </label>
               </div>
 

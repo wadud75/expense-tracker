@@ -9,6 +9,7 @@ import LedgerIcon from "@/components/svgs/LedgerIcon";
 import PlusIcon from "@/components/svgs/PlusIcon";
 import RefreshIcon from "@/components/svgs/RefreshIcon";
 import SearchIcon from "@/components/svgs/SearchIcon";
+import { formatListDate } from "@/lib/dateFormat";
 
 const STORAGE_KEY = "expense-tracker-warranty-manual-records";
 const DEFAULT_WARRANTY_MONTHS = 12;
@@ -20,19 +21,6 @@ const EMPTY_FORM = {
   warrantyMonths: "12",
   note: "",
 };
-
-function formatDate(value) {
-  if (!value) {
-    return "-";
-  }
-
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) {
-    return "-";
-  }
-
-  return parsed.toLocaleDateString();
-}
 
 function getEndDate(startDate, warrantyMonths) {
   if (Number(warrantyMonths || 0) <= 0) {
@@ -576,7 +564,7 @@ export default function WarrantyManagementPage() {
                         </span>
                         <span className="warranty-pro-cell">
                           <strong>{record.productName}</strong>
-                          <small>{formatDate(record.purchaseDate)}</small>
+                          <small>{formatListDate(record.purchaseDate)}</small>
                         </span>
                         <span className="warranty-pro-cell">
                           <strong>{record.invoiceNo}</strong>
@@ -626,7 +614,7 @@ export default function WarrantyManagementPage() {
                       </div>
                       <div className="warranty-pro-mobile-grid-inner">
                         <div><span>Invoice</span><strong>{record.invoiceNo}</strong></div>
-                        <div><span>Purchase</span><strong>{formatDate(record.purchaseDate)}</strong></div>
+                        <div><span>Purchase</span><strong>{formatListDate(record.purchaseDate)}</strong></div>
                         <div><span>Coverage</span><strong>{getDurationLabel(record.warrantyMonths)}</strong></div>
                         <div><span>Note</span><strong>{record.note || "No note added"}</strong></div>
                       </div>

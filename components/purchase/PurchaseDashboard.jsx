@@ -6,22 +6,14 @@ import InvoicePreviewModal from "@/components/invoices/InvoicePreviewModal";
 import { translations } from "@/components/purchase/purchaseContent";
 import usePurchaseLanguage from "@/components/purchase/usePurchaseLanguage";
 import { purchaseIcons } from "@/components/purchase/purchaseContent";
+import { formatListDate } from "@/lib/dateFormat";
 import { downloadInvoicePdf } from "@/lib/invoicePrint";
 
 const { CalendarIcon, PlusIcon, SearchIcon } = purchaseIcons;
 const QUICK_FILTER_KEYS = ["today", "7days", "30days", "1year", "lifetime"];
 
-function formatDate(value) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return "-";
-  }
-
-  return date.toLocaleDateString();
-}
-
 function formatAmount(value) {
-  return (Number(value) || 0).toFixed(2);
+  return (Number(value) || 0).toFixed(0);
 }
 
 function getPurchaseDue(purchase) {
@@ -49,7 +41,7 @@ function buildPurchaseInvoice(purchase) {
       { label: "Payment Method", value: purchase.paymentMethod || "Cash" },
       { label: "Brand", value: purchase.brandName || "-" },
       { label: "Variant", value: purchase.variantName || "-" },
-      { label: "Date", value: formatDate(purchase.createdAt) },
+      { label: "Date", value: formatListDate(purchase.createdAt) },
     ],
     items: [
       {
@@ -380,7 +372,7 @@ export default function PurchaseDashboard() {
           ) : filteredPurchases.length ? (
             filteredPurchases.map((purchase) => (
               <div key={purchase.id} className="table-row purchase-table-row">
-                <span>{formatDate(purchase.createdAt)}</span>
+                <span>{formatListDate(purchase.createdAt)}</span>
                 <span>{purchase.invoiceNo || "-"}</span>
                 <span>{purchase.supplierName || "-"}</span>
                 <span>{purchase.productName || "-"}</span>

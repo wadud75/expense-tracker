@@ -3,19 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import MoneyIcon from "@/components/svgs/MoneyIcon";
-
-function formatDate(value) {
-  if (!value) {
-    return "-";
-  }
-
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) {
-    return "-";
-  }
-
-  return parsed.toLocaleDateString();
-}
+import { formatListDate } from "@/lib/dateFormat";
 
 function formatSalary(value) {
   return `Tk ${Number(value || 0).toFixed(0)}`;
@@ -217,7 +205,7 @@ export default function SellerSalaryHistoryContent({ sellerId, modal = false }) 
                       {entry.status === "paid" ? "Paid" : "Unpaid"}
                     </span>
                     <small>Amount {formatSalary(entry.amount)}</small>
-                    <small>{entry.paidAt ? `Paid on ${formatDate(entry.paidAt)}` : "No payment recorded yet"}</small>
+                    <small>{entry.paidAt ? `Paid on ${formatListDate(entry.paidAt)}` : "No payment recorded yet"}</small>
                   </div>
 
                   <div className="seller-salary-history-actions">

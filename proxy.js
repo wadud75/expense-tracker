@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { AUTH_COOKIE_NAME } from "@/lib/auth-config";
 
-const PUBLIC_PATHS = new Set(["/admin/login"]);
+const PUBLIC_PATHS = new Set(["/dashboard/login", "/admin/login"]);
 
 function encodeBase64Url(value) {
   return btoa(value).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
@@ -68,6 +68,7 @@ function isProtectedPath(pathname) {
 
   return (
     pathname === "/" ||
+    pathname.startsWith("/dashboard") ||
     pathname.startsWith("/admin") ||
     pathname.startsWith("/purchase") ||
     pathname.startsWith("/sales") ||
@@ -99,7 +100,7 @@ export async function proxy(request) {
       );
     }
 
-    return NextResponse.redirect(new URL("/admin/login", request.url));
+    return NextResponse.redirect(new URL("/dashboard/login", request.url));
   }
 
   const token = request.cookies.get(AUTH_COOKIE_NAME)?.value;
@@ -113,7 +114,7 @@ export async function proxy(request) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
 
-  const loginUrl = new URL("/admin/login", request.url);
+  const loginUrl = new URL("/dashboard/login", request.url);
   loginUrl.searchParams.set("next", `${pathname}${search || ""}`);
   return NextResponse.redirect(loginUrl);
 }

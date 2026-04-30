@@ -294,7 +294,7 @@ async function getHomeDashboardData() {
       warrantySummary: buildWarrantySummary(salesRows),
       workspaceCards: [
         {
-          href: "/admin",
+          href: "/dashboard",
           title: "Admin Dashboard",
           description: "Master data, categories, suppliers, and setup controls.",
           iconKey: "dashboard",
@@ -398,7 +398,7 @@ async function getHomeDashboardData() {
       warrantySummary: { active: 0, expiring: 0, expired: 0 },
       workspaceCards: [
         {
-          href: "/admin",
+          href: "/dashboard",
           title: "Admin Dashboard",
           description: "Open the internal workspace.",
           iconKey: "dashboard",

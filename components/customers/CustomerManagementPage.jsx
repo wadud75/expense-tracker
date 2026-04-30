@@ -9,6 +9,7 @@ import MoneyIcon from "@/components/svgs/MoneyIcon";
 import PlusIcon from "@/components/svgs/PlusIcon";
 import RefreshIcon from "@/components/svgs/RefreshIcon";
 import SearchIcon from "@/components/svgs/SearchIcon";
+import { formatListDate } from "@/lib/dateFormat";
 
 const EMPTY_FORM = {
   id: "",
@@ -26,20 +27,7 @@ function normalizeText(value) {
 }
 
 function formatCurrency(value) {
-  return `Tk ${Number(value || 0).toFixed(2)}`;
-}
-
-function formatDate(value) {
-  if (!value) {
-    return "-";
-  }
-
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return "-";
-  }
-
-  return date.toLocaleDateString();
+  return `Tk ${Number(value || 0).toFixed(0)}`;
 }
 
 function buildSalesSummary(sales) {
@@ -437,7 +425,7 @@ export default function CustomerManagementPage() {
                     </span>
                     <span className="customer-pro-cell">
                       <strong>{customer.orders}</strong>
-                      <small>Last purchase {formatDate(customer.lastPurchaseAt)}</small>
+                      <small>Last purchase {formatListDate(customer.lastPurchaseAt)}</small>
                     </span>
                     <span className="customer-pro-cell">
                       <strong>{formatCurrency(customer.revenue)}</strong>

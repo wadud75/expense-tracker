@@ -4,12 +4,14 @@ import { useEffect, useMemo, useState } from "react";
 import AlertTriangleIcon from "@/components/svgs/AlertTriangleIcon";
 import CalendarIcon from "@/components/svgs/CalendarIcon";
 import CheckIcon from "@/components/svgs/CheckIcon";
+import CloseIcon from "@/components/svgs/CloseIcon";
 import MoneyIcon from "@/components/svgs/MoneyIcon";
 import PlusIcon from "@/components/svgs/PlusIcon";
 import ReceiptIcon from "@/components/svgs/ReceiptIcon";
 import RefreshIcon from "@/components/svgs/RefreshIcon";
 import SearchIcon from "@/components/svgs/SearchIcon";
 import TakaIcon from "@/components/svgs/TakaIcon";
+import { formatListDate, formatListDateTime } from "@/lib/dateFormat";
 
 const EMPTY_FORM = {
   direction: "receivable",
@@ -22,21 +24,10 @@ const EMPTY_FORM = {
   note: "",
 };
 
+const DEFAULT_PAYMENT_ACCOUNT = "Cash";
+
 function formatCurrency(value) {
-  return `Tk ${Number(value || 0).toFixed(2)}`;
-}
-
-function formatDate(value) {
-  if (!value) {
-    return "-";
-  }
-
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return "-";
-  }
-
-  return date.toLocaleDateString();
+  return `Tk ${Number(value || 0).toFixed(0)}`;
 }
 
 function normalizeStatusPriority(status) {
@@ -76,6 +67,7 @@ function getPaymentButtonLabel(direction) {
 
 export default function DueManagementPage() {
   const [records, setRecords] = useState([]);
+  const [paymentAccounts, setPaymentAccounts] = useState([{ id: "cash", name: DEFAULT_PAYMENT_ACCOUNT }]);
   const [summary, setSummary] = useState({
     totalReceivable: 0,
     totalPayable: 0,
@@ -85,13 +77,16 @@ export default function DueManagementPage() {
     settledCount: 0,
   });
   const [form, setForm] = useState(EMPTY_FORM);
-  const [paymentDrafts, setPaymentDrafts] = useState({});
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
   const [directionFilter, setDirectionFilter] = useState("all");
   const [sourceFilter, setSourceFilter] = useState("all");
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isEntryModalOpen, setIsEntryModalOpen] = useState(false);
+  const [historyRecord, setHistoryRecord] = useState(null);
+  const [paymentRecord, setPaymentRecord] = useState(null);
+  const [paymentAmount, setPaymentAmount] = useState("");
+  const [paymentAccount, setPaymentAccount] = useState(DEFAULT_PAYMENT_ACCOUNT);
   const [activePaymentId, setActivePaymentId] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
@@ -99,15 +94,37 @@ export default function DueManagementPage() {
   async function loadDueData() {
     try {
       setErrorMessage("");
-      const response = await fetch("/api/due-management", { cache: "no-store" });
-      const result = await response.json();
+      const [dueResponse, masterDataResponse] = await Promise.all([
+        fetch("/api/due-management", { cache: "no-store" }),
+        fetch("/api/master-data", { cache: "no-store" }),
+      ]);
+      const [result, masterDataResult] = await Promise.all([
+        dueResponse.json(),
+        masterDataResponse.json(),
+      ]);
 
-      if (!response.ok) {
+      if (!dueResponse.ok) {
         throw new Error(result.error || "Failed to load due records.");
       }
 
+      if (!masterDataResponse.ok) {
+        throw new Error(masterDataResult.error || "Failed to load payment accounts.");
+      }
+
+      const bankOptions = Array.isArray(masterDataResult.items?.bank) ? masterDataResult.items.bank : [];
+      const dedupedAccounts = [
+        { id: "cash", name: DEFAULT_PAYMENT_ACCOUNT },
+        ...bankOptions.filter(
+          (option, index, collection) =>
+            collection.findIndex(
+              (entry) => String(entry.name || "").trim().toLowerCase() === String(option.name || "").trim().toLowerCase(),
+            ) === index,
+        ),
+      ];
+
       setRecords(result.records || []);
       setSummary(result.summary || {});
+      setPaymentAccounts(dedupedAccounts);
     } catch (error) {
       setErrorMessage(error.message || "Failed to load due records.");
     } finally {
@@ -140,10 +157,6 @@ export default function DueManagementPage() {
           return false;
         }
 
-        if (statusFilter !== "all" && record.status !== statusFilter) {
-          return false;
-        }
-
         if (directionFilter !== "all" && record.direction !== directionFilter) {
           return false;
         }
@@ -165,7 +178,7 @@ export default function DueManagementPage() {
         const rightTime = right.dueDate ? new Date(right.dueDate).getTime() : 0;
         return rightTime - leftTime;
       });
-  }, [directionFilter, records, searchTerm, sourceFilter, statusFilter]);
+  }, [directionFilter, records, searchTerm, sourceFilter]);
 
   const focusItems = useMemo(
     () => filteredRecords.filter((record) => record.status !== "settled").slice(0, 4),
@@ -196,6 +209,7 @@ export default function DueManagementPage() {
       }
 
       setForm(EMPTY_FORM);
+      setIsEntryModalOpen(false);
       setSuccessMessage("Manual due entry saved.");
       await loadDueData();
     } catch (error) {
@@ -205,10 +219,52 @@ export default function DueManagementPage() {
     }
   }
 
-  async function handleRecordPayment(record) {
-    const draftAmount = Number(paymentDrafts[record.id] || 0);
+  function openEntryModal() {
+    setForm(EMPTY_FORM);
+    setErrorMessage("");
+    setSuccessMessage("");
+    setIsEntryModalOpen(true);
+  }
 
-    if (!draftAmount || draftAmount <= 0 || activePaymentId) {
+  function closeEntryModal() {
+    if (isSubmitting) {
+      return;
+    }
+
+    setIsEntryModalOpen(false);
+  }
+
+  function openHistoryModal(record) {
+    setHistoryRecord(record);
+  }
+
+  function closeHistoryModal() {
+    setHistoryRecord(null);
+  }
+
+  function openPaymentModal(record) {
+    setPaymentRecord(record);
+    setPaymentAmount("");
+    setPaymentAccount(DEFAULT_PAYMENT_ACCOUNT);
+    setErrorMessage("");
+    setSuccessMessage("");
+  }
+
+  function closePaymentModal() {
+    if (activePaymentId) {
+      return;
+    }
+
+    setPaymentRecord(null);
+    setPaymentAmount("");
+    setPaymentAccount(DEFAULT_PAYMENT_ACCOUNT);
+  }
+
+  async function handleRecordPayment() {
+    const draftAmount = Number(paymentAmount || 0);
+    const record = paymentRecord;
+
+    if (!record || !draftAmount || draftAmount <= 0 || activePaymentId) {
       return;
     }
 
@@ -225,6 +281,7 @@ export default function DueManagementPage() {
           sourceType: record.sourceType,
           referenceId,
           amount: draftAmount,
+          paymentAccount,
         }),
       });
       const result = await response.json();
@@ -233,11 +290,8 @@ export default function DueManagementPage() {
         throw new Error(result.error || "Failed to record payment.");
       }
 
-      setPaymentDrafts((current) => ({
-        ...current,
-        [record.id]: "",
-      }));
-      setSuccessMessage(`${getPaymentButtonLabel(record.direction)} payment recorded.`);
+      setSuccessMessage(`${getPaymentButtonLabel(record.direction)} payment recorded in ${paymentAccount}.`);
+      closePaymentModal();
       await loadDueData();
     } catch (error) {
       setErrorMessage(error.message || "Failed to record payment.");
@@ -259,6 +313,10 @@ export default function DueManagementPage() {
         </div>
 
         <div className="due-hero-actions">
+          <button type="button" className="primary-button due-add-button" onClick={openEntryModal}>
+            <PlusIcon />
+            <span>Add due entry</span>
+          </button>
           <button
             type="button"
             className="pill-button due-refresh-button"
@@ -341,24 +399,6 @@ export default function DueManagementPage() {
               <div className="purchase-select-wrap due-select-wrap">
                 <select
                   className="purchase-input purchase-select-input due-select"
-                  value={statusFilter}
-                  onChange={(event) => setStatusFilter(event.target.value)}
-                >
-                  <option value="all">All status</option>
-                  <option value="open">Open</option>
-                  <option value="overdue">Overdue</option>
-                  <option value="settled">Settled</option>
-                </select>
-                <span className="purchase-select-arrow" aria-hidden="true">
-                  <svg viewBox="0 0 20 20">
-                    <path d="m5 7 5 5 5-5" />
-                  </svg>
-                </span>
-              </div>
-
-              <div className="purchase-select-wrap due-select-wrap">
-                <select
-                  className="purchase-input purchase-select-input due-select"
                   value={directionFilter}
                   onChange={(event) => setDirectionFilter(event.target.value)}
                 >
@@ -402,7 +442,6 @@ export default function DueManagementPage() {
               <span>Total</span>
               <span>Paid</span>
               <span>Balance</span>
-              <span>Status</span>
               <span>Action</span>
             </div>
 
@@ -419,40 +458,29 @@ export default function DueManagementPage() {
                     {record.sourceLabel}
                   </span>
                   <span>{record.reference || "-"}</span>
-                  <span>{formatDate(record.dueDate || record.createdAt)}</span>
+                  <span>{formatListDate(record.dueDate || record.createdAt)}</span>
                   <span>{formatCurrency(record.totalAmount)}</span>
                   <span>{formatCurrency(record.paidAmount)}</span>
                   <strong className="due-balance-cell">{formatCurrency(record.dueAmount)}</strong>
-                  <span className={`due-status due-status-${record.status}`}>{record.status}</span>
                   <div className="due-action-cell">
+                    <button
+                      type="button"
+                      className="outline-button due-history-button"
+                      onClick={() => openHistoryModal(record)}
+                      >
+                        History
+                      </button>
                     {record.dueAmount > 0 ? (
                       <>
-                        <input
-                          className="purchase-input due-payment-input"
-                          type="number"
-                          min="0"
-                          max={record.dueAmount}
-                          step="0.01"
-                          placeholder={record.dueAmount.toFixed(2)}
-                          value={paymentDrafts[record.id] || ""}
-                          onChange={(event) =>
-                            setPaymentDrafts((current) => ({
-                              ...current,
-                              [record.id]: event.target.value,
-                            }))
-                          }
-                        />
                         <button
                           type="button"
                           className="primary-button due-action-button"
-                          onClick={() => handleRecordPayment(record)}
+                          onClick={() => openPaymentModal(record)}
                           disabled={activePaymentId === record.id}
                         >
                           <CheckIcon />
                           <span>
-                            {activePaymentId === record.id
-                              ? "Saving..."
-                              : getPaymentButtonLabel(record.direction)}
+                            {activePaymentId === record.id ? "Saving..." : getPaymentButtonLabel(record.direction)}
                           </span>
                         </button>
                       </>
@@ -476,7 +504,6 @@ export default function DueManagementPage() {
                       <strong>{record.partyName}</strong>
                       <p>{record.sourceLabel}</p>
                     </div>
-                    <span className={`due-status due-status-${record.status}`}>{record.status}</span>
                   </div>
 
                   <div className="due-mobile-details">
@@ -486,7 +513,7 @@ export default function DueManagementPage() {
                     </div>
                     <div>
                       <span>Due date</span>
-                      <strong>{formatDate(record.dueDate || record.createdAt)}</strong>
+                      <strong>{formatListDate(record.dueDate || record.createdAt)}</strong>
                     </div>
                     <div>
                       <span>Total</span>
@@ -508,33 +535,36 @@ export default function DueManagementPage() {
 
                   {record.dueAmount > 0 ? (
                     <div className="due-mobile-action">
-                      <input
-                        className="purchase-input due-payment-input"
-                        type="number"
-                        min="0"
-                        max={record.dueAmount}
-                        step="0.01"
-                        placeholder={record.dueAmount.toFixed(2)}
-                        value={paymentDrafts[record.id] || ""}
-                        onChange={(event) =>
-                          setPaymentDrafts((current) => ({
-                            ...current,
-                            [record.id]: event.target.value,
-                          }))
-                        }
-                      />
+                      <button
+                        type="button"
+                        className="outline-button due-history-button"
+                        onClick={() => openHistoryModal(record)}
+                      >
+                        History
+                      </button>
                       <button
                         type="button"
                         className="primary-button due-action-button"
-                        onClick={() => handleRecordPayment(record)}
+                        onClick={() => openPaymentModal(record)}
                         disabled={activePaymentId === record.id}
                       >
                         <CheckIcon />
                         <span>
                           {activePaymentId === record.id
                             ? "Saving..."
-                            : `${getPaymentButtonLabel(record.direction)} payment`}
+                            : getPaymentButtonLabel(record.direction)}
                         </span>
+                      </button>
+                    </div>
+                  ) : null}
+                  {record.dueAmount <= 0 ? (
+                    <div className="due-mobile-action">
+                      <button
+                        type="button"
+                        className="outline-button due-history-button"
+                        onClick={() => openHistoryModal(record)}
+                      >
+                        History
                       </button>
                     </div>
                   ) : null}
@@ -545,138 +575,6 @@ export default function DueManagementPage() {
         </div>
 
         <aside className="due-side-panel">
-          <section className="due-side-card">
-            <div className="due-side-head">
-              <span className="due-side-icon">
-                <PlusIcon />
-              </span>
-              <div>
-                <h3>Add due entry</h3>
-                <p>Create manual receivable or payable records for anything outside sales or purchases.</p>
-              </div>
-            </div>
-
-            <form className="due-form" onSubmit={handleCreateEntry}>
-              <div className="purchase-grid purchase-grid-two">
-                <label className="purchase-field-stack">
-                  <span>Flow</span>
-                  <select
-                    className="purchase-input due-select"
-                    value={form.direction}
-                    onChange={(event) =>
-                      setForm((current) => ({ ...current, direction: event.target.value }))
-                    }
-                  >
-                    <option value="receivable">Receivable</option>
-                    <option value="payable">Payable</option>
-                  </select>
-                </label>
-
-                <label className="purchase-field-stack">
-                  <span>Category</span>
-                  <input
-                    className="purchase-input"
-                    type="text"
-                    placeholder="Service, rent, custom work"
-                    value={form.category}
-                    onChange={(event) =>
-                      setForm((current) => ({ ...current, category: event.target.value }))
-                    }
-                  />
-                </label>
-              </div>
-
-              <label className="purchase-field-stack">
-                <span>Party name</span>
-                <input
-                  className="purchase-input"
-                  type="text"
-                  placeholder="Customer, supplier, landlord"
-                  value={form.partyName}
-                  onChange={(event) =>
-                    setForm((current) => ({ ...current, partyName: event.target.value }))
-                  }
-                />
-              </label>
-
-              <label className="purchase-field-stack">
-                <span>Reference</span>
-                <input
-                  className="purchase-input"
-                  type="text"
-                  placeholder="Invoice no, project, item name"
-                  value={form.reference}
-                  onChange={(event) =>
-                    setForm((current) => ({ ...current, reference: event.target.value }))
-                  }
-                />
-              </label>
-
-              <div className="purchase-grid purchase-grid-two">
-                <label className="purchase-field-stack">
-                  <span>Total amount</span>
-                  <input
-                    className="purchase-input"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    placeholder="0.00"
-                    value={form.totalAmount}
-                    onChange={(event) =>
-                      setForm((current) => ({ ...current, totalAmount: event.target.value }))
-                    }
-                  />
-                </label>
-
-                <label className="purchase-field-stack">
-                  <span>Already paid</span>
-                  <input
-                    className="purchase-input"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    placeholder="0.00"
-                    value={form.paidAmount}
-                    onChange={(event) =>
-                      setForm((current) => ({ ...current, paidAmount: event.target.value }))
-                    }
-                  />
-                </label>
-              </div>
-
-              <div className="purchase-field-stack">
-                <span>Due date</span>
-                <div className="date-input due-date-input">
-                  <CalendarIcon />
-                  <input
-                    type="date"
-                    value={form.dueDate}
-                    onChange={(event) =>
-                      setForm((current) => ({ ...current, dueDate: event.target.value }))
-                    }
-                  />
-                </div>
-              </div>
-
-              <label className="purchase-field-stack">
-                <span>Note</span>
-                <textarea
-                  className="purchase-textarea due-textarea"
-                  placeholder="Add context for follow-up or settlement"
-                  value={form.note}
-                  onChange={(event) =>
-                    setForm((current) => ({ ...current, note: event.target.value }))
-                  }
-                />
-              </label>
-
-              <button type="submit" className="primary-button due-submit-button" disabled={isSubmitting}>
-                <PlusIcon />
-                <span>{isSubmitting ? "Saving entry..." : "Save due entry"}</span>
-              </button>
-            </form>
-          </section>
-
           <section className="due-side-card due-side-card-focus">
             <div className="due-side-head">
               <span className="due-side-icon due-side-icon-alert">
@@ -715,6 +613,288 @@ export default function DueManagementPage() {
           </section>
         </aside>
       </div>
+
+      {isEntryModalOpen ? (
+        <div className="route-modal-overlay" onClick={closeEntryModal}>
+          <div className="route-modal-shell customer-form-modal-shell" onClick={(event) => event.stopPropagation()}>
+            <div className="purchase-modal-card">
+              <div className="purchase-modal-header customer-modal-header">
+                <div className="purchase-header-copy">
+                  <div>
+                    <span className="customer-pro-panel-label">Due entry</span>
+                    <h1>Add due entry</h1>
+                    <p>Create a manual receivable or payable record outside sales or purchases.</p>
+                  </div>
+                </div>
+                <button type="button" className="outline-button warranty-modal-close" onClick={closeEntryModal} disabled={isSubmitting}>
+                  <CloseIcon />
+                </button>
+              </div>
+
+              <div className="purchase-modal-body">
+                <section className="purchase-panel">
+                  <form className="due-form" onSubmit={handleCreateEntry}>
+                    <div className="purchase-grid purchase-grid-two">
+                      <label className="purchase-field-stack">
+                        <span>Flow</span>
+                        <select
+                          className="purchase-input due-select"
+                          value={form.direction}
+                          onChange={(event) =>
+                            setForm((current) => ({ ...current, direction: event.target.value }))
+                          }
+                        >
+                          <option value="receivable">Receivable</option>
+                          <option value="payable">Payable</option>
+                        </select>
+                      </label>
+
+                      <label className="purchase-field-stack">
+                        <span>Category</span>
+                        <input
+                          className="purchase-input"
+                          type="text"
+                          placeholder="Service, rent, custom work"
+                          value={form.category}
+                          onChange={(event) =>
+                            setForm((current) => ({ ...current, category: event.target.value }))
+                          }
+                        />
+                      </label>
+                    </div>
+
+                    <label className="purchase-field-stack">
+                      <span>Party name</span>
+                      <input
+                        className="purchase-input"
+                        type="text"
+                        placeholder="Customer, supplier, landlord"
+                        value={form.partyName}
+                        onChange={(event) =>
+                          setForm((current) => ({ ...current, partyName: event.target.value }))
+                        }
+                      />
+                    </label>
+
+                    <label className="purchase-field-stack">
+                      <span>Reference</span>
+                      <input
+                        className="purchase-input"
+                        type="text"
+                        placeholder="Invoice no, project, item name"
+                        value={form.reference}
+                        onChange={(event) =>
+                          setForm((current) => ({ ...current, reference: event.target.value }))
+                        }
+                      />
+                    </label>
+
+                    <div className="purchase-grid purchase-grid-two">
+                      <label className="purchase-field-stack">
+                        <span>Total amount</span>
+                        <input
+                          className="purchase-input"
+                          type="number"
+                          min="0"
+                          step="1"
+                          placeholder="0"
+                          value={form.totalAmount}
+                          onChange={(event) =>
+                            setForm((current) => ({ ...current, totalAmount: event.target.value }))
+                          }
+                        />
+                      </label>
+
+                      <label className="purchase-field-stack">
+                        <span>Already paid</span>
+                        <input
+                          className="purchase-input"
+                          type="number"
+                          min="0"
+                          step="1"
+                          placeholder="0"
+                          value={form.paidAmount}
+                          onChange={(event) =>
+                            setForm((current) => ({ ...current, paidAmount: event.target.value }))
+                          }
+                        />
+                      </label>
+                    </div>
+
+                    <div className="purchase-field-stack">
+                      <span>Due date</span>
+                      <div className="date-input due-date-input">
+                        <CalendarIcon />
+                        <input
+                          type="date"
+                          value={form.dueDate}
+                          onChange={(event) =>
+                            setForm((current) => ({ ...current, dueDate: event.target.value }))
+                          }
+                        />
+                      </div>
+                    </div>
+
+                    <label className="purchase-field-stack">
+                      <span>Note</span>
+                      <textarea
+                        className="purchase-textarea due-textarea"
+                        placeholder="Add context for follow-up or settlement"
+                        value={form.note}
+                        onChange={(event) =>
+                          setForm((current) => ({ ...current, note: event.target.value }))
+                        }
+                      />
+                    </label>
+
+                    <div className="customer-pro-action-row">
+                      <button type="submit" className="primary-button due-submit-button" disabled={isSubmitting}>
+                        <PlusIcon />
+                        <span>{isSubmitting ? "Saving entry..." : "Save due entry"}</span>
+                      </button>
+                      <button type="button" className="outline-button" onClick={closeEntryModal} disabled={isSubmitting}>
+                        Cancel
+                      </button>
+                    </div>
+                  </form>
+                </section>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {paymentRecord ? (
+        <div className="route-modal-overlay" onClick={closePaymentModal}>
+          <div className="route-modal-shell customer-form-modal-shell" onClick={(event) => event.stopPropagation()}>
+            <div className="purchase-modal-card">
+              <div className="purchase-modal-header customer-modal-header">
+                <div className="purchase-header-copy">
+                  <div>
+                    <span className="customer-pro-panel-label">{getPaymentButtonLabel(paymentRecord.direction)}</span>
+                    <h1>{paymentRecord.partyName}</h1>
+                    <p>{paymentRecord.reference || paymentRecord.sourceLabel}</p>
+                  </div>
+                </div>
+                <button type="button" className="outline-button warranty-modal-close" onClick={closePaymentModal} disabled={Boolean(activePaymentId)}>
+                  <CloseIcon />
+                </button>
+              </div>
+
+              <div className="purchase-modal-body">
+                <section className="purchase-panel">
+                  <div className="due-history-stack">
+                    <div className="due-history-item">
+                      <div className="due-history-copy">
+                        <strong>Balance</strong>
+                        <p>{formatCurrency(paymentRecord.dueAmount)}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <form
+                    className="due-form"
+                    onSubmit={(event) => {
+                      event.preventDefault();
+                      handleRecordPayment();
+                    }}
+                  >
+                    <div className="purchase-grid purchase-grid-two">
+                      <label className="purchase-field-stack">
+                        <span>Amount</span>
+                        <input
+                          className="purchase-input due-payment-input"
+                          type="number"
+                          min="0"
+                          max={paymentRecord.dueAmount}
+                          step="1"
+                          placeholder={paymentRecord.dueAmount.toFixed(0)}
+                          value={paymentAmount}
+                          onChange={(event) => setPaymentAmount(event.target.value)}
+                          required
+                        />
+                      </label>
+
+                      <label className="purchase-field-stack">
+                        <span>{paymentRecord.direction === "receivable" ? "Receive to" : "Pay from"}</span>
+                        <div className="purchase-select-wrap due-select-wrap">
+                          <select
+                            className="purchase-input purchase-select-input due-select"
+                            value={paymentAccount}
+                            onChange={(event) => setPaymentAccount(event.target.value)}
+                          >
+                            {paymentAccounts.map((account) => (
+                              <option key={account.id || account.name} value={account.name}>
+                                {account.name}
+                              </option>
+                            ))}
+                          </select>
+                          <span className="purchase-select-arrow" aria-hidden="true">
+                            <svg viewBox="0 0 20 20">
+                              <path d="m5 7 5 5 5-5" />
+                            </svg>
+                          </span>
+                        </div>
+                      </label>
+                    </div>
+
+                    <div className="customer-pro-action-row">
+                      <button type="submit" className="primary-button due-action-button" disabled={Boolean(activePaymentId)}>
+                        <CheckIcon />
+                        <span>{activePaymentId ? "Saving..." : getPaymentButtonLabel(paymentRecord.direction)}</span>
+                      </button>
+                      <button type="button" className="outline-button" onClick={closePaymentModal} disabled={Boolean(activePaymentId)}>
+                        Cancel
+                      </button>
+                    </div>
+                  </form>
+                </section>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {historyRecord ? (
+        <div className="route-modal-overlay" onClick={closeHistoryModal}>
+          <div className="route-modal-shell customer-form-modal-shell" onClick={(event) => event.stopPropagation()}>
+            <div className="purchase-modal-card">
+              <div className="purchase-modal-header customer-modal-header">
+                <div className="purchase-header-copy">
+                  <div>
+                    <span className="customer-pro-panel-label">Collection history</span>
+                    <h1>{historyRecord.partyName}</h1>
+                    <p>{historyRecord.reference || historyRecord.sourceLabel}</p>
+                  </div>
+                </div>
+                <button type="button" className="outline-button warranty-modal-close" onClick={closeHistoryModal}>
+                  <CloseIcon />
+                </button>
+              </div>
+
+              <div className="purchase-modal-body">
+                <section className="purchase-panel">
+                  <div className="due-history-stack">
+                    {historyRecord.paymentHistory?.length ? (
+                      historyRecord.paymentHistory.map((entry) => (
+                        <article key={entry.id} className="due-history-item">
+                          <div className="due-history-copy">
+                            <strong>{formatCurrency(entry.amount)}</strong>
+                            <p>{entry.note || "Recorded payment"}{entry.account ? ` | ${entry.account}` : ""}</p>
+                          </div>
+                          <span>{formatListDateTime(entry.createdAt)}</span>
+                        </article>
+                      ))
+                    ) : (
+                      <div className="table-empty">No collection history recorded yet.</div>
+                    )}
+                  </div>
+                </section>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }

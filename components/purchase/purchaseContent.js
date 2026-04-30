@@ -54,7 +54,7 @@ export const translations = {
     brandCode: "Lift & Generator",
     brandStore: "",
     menuItems: [
-      "Admin Dashboard",
+      "Dashboard",
       "Purchase / Stock Entry",
       "Sales / POS Now",
       "Sales List",
@@ -141,7 +141,7 @@ export const translations = {
     brandCode: "লিফট অ্যান্ড জেনারেটর",
     brandStore: "",
     menuItems: [
-      "অ্যাডমিন ড্যাশবোর্ড",
+      "ড্যাশবোর্ড",
       "ক্রয় / স্টক এন্ট্রি",
       "সেলস / পিওএস",
       "সেলস তালিকা",

@@ -143,7 +143,7 @@ export default function SalesPage() {
                 <div className="sales-product-image">{product.productName?.slice(0, 2) || "P"}</div>
                 <div className="sales-product-copy">
                   <strong>{product.displayName}</strong>
-                  <span>?{Number(product.unitPrice || 0).toFixed(2)}</span>
+                  <span>?{Number(product.unitPrice || 0).toFixed(0)}</span>
                 </div>
                 <small>{copy.stock}: {product.currentStock || 0}</small>
               </button>
@@ -176,7 +176,7 @@ export default function SalesPage() {
                 <strong>{selectedProduct.displayName}</strong>
                 <div className="sales-cart-price-row">
                   <span>?</span>
-                  <input type="text" value={Number(selectedProduct.unitPrice || 0).toFixed(2)} readOnly />
+                  <input type="text" value={Number(selectedProduct.unitPrice || 0).toFixed(0)} readOnly />
                   <small>x {selectedQty}</small>
                 </div>
               </div>
@@ -186,7 +186,7 @@ export default function SalesPage() {
                 <button type="button" onClick={() => setQuantity((current) => current + 1)} disabled={selectedQty >= (selectedProduct.currentStock || 0)}>+</button>
                 <button type="button" onClick={() => setSelectedProduct(null)}>x</button>
               </div>
-              <strong className="sales-cart-line-total">?{subtotal.toFixed(2)}</strong>
+              <strong className="sales-cart-line-total">?{subtotal.toFixed(0)}</strong>
             </div>
           ) : (
             <div className="sales-cart-empty-state">
@@ -201,11 +201,11 @@ export default function SalesPage() {
         <div className="sales-cart-summary">
           <div className="sales-summary-row">
             <span>{copy.subtotal}</span>
-            <strong>?{subtotal.toFixed(2)}</strong>
+            <strong>?{subtotal.toFixed(0)}</strong>
           </div>
           <div className="sales-summary-total">
             <span>{copy.total}</span>
-            <strong>?{subtotal.toFixed(2)}</strong>
+            <strong>?{subtotal.toFixed(0)}</strong>
           </div>
         </div>
 

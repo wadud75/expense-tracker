@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import usePurchaseLanguage from "@/components/purchase/usePurchaseLanguage";
+import { formatListDateTime } from "@/lib/dateFormat";
 
 function ChevronDownIcon() {
   return (
@@ -9,11 +10,6 @@ function ChevronDownIcon() {
       <path d="M6 9l6 6 6-6" />
     </svg>
   );
-}
-
-function formatDate(value) {
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? "-" : date.toLocaleString();
 }
 
 function formatWholeNumber(value) {
@@ -338,7 +334,7 @@ export default function StockPage() {
                   {quantityPrefix}{Math.abs(Number(movement.quantity) || 0)}
                 </strong>
                 <span>{movement.note || "-"}</span>
-                <span>{formatDate(movement.createdAt)}</span>
+                <span>{formatListDateTime(movement.createdAt)}</span>
               </div>
             );
           })}

@@ -20,6 +20,7 @@ function buildPurchaseDocument(payload) {
     supplierName: (payload.supplierName || "").trim(),
     productName: (payload.productName || "").trim(),
     brandName: (payload.brandName || "").trim(),
+    modelName: (payload.modelName || "").trim(),
     variantName: (payload.variantName || "").trim(),
     categoryName: (payload.categoryName || "").trim(),
     quantity,
@@ -28,8 +29,6 @@ function buildPurchaseDocument(payload) {
     paymentAmount,
     invoiceTotal,
     notes: (payload.notes || "").trim(),
-    imageUrl: payload.imageUrl || "",
-    imageFileId: payload.imageFileId || "",
     createdAt: new Date(),
   };
 }
@@ -49,14 +48,15 @@ export async function GET() {
 
     return NextResponse.json({
       purchases: purchases.map((purchase) => ({
-        id: purchase._id.toString(),
+        id: purchase._id?.toString?.() || purchase.id || "",
         invoiceNo: purchase.invoiceNo || "",
-        supplierName: purchase.supplierName,
-        productName: purchase.productName,
+        supplierName: purchase.supplierName || "",
+        productName: purchase.productName || "",
         brandName: purchase.brandName || "",
+        modelName: purchase.modelName || "",
         variantName: purchase.variantName || "",
         categoryName: purchase.categoryName || "",
-        quantity: purchase.quantity,
+        quantity: purchase.quantity ?? 0,
         unitPrice: purchase.unitPrice ?? purchase.costPerUnit ?? 0,
         paymentMethod: purchase.paymentMethod || "Cash",
         paymentAmount: purchase.paymentAmount ?? purchase.paidAmount ?? 0,
@@ -64,11 +64,11 @@ export async function GET() {
           purchase.invoiceTotal ??
           calculatePurchaseTotal(purchase.quantity, purchase.unitPrice ?? purchase.costPerUnit),
         createdAt: purchase.createdAt,
-        imageUrl: purchase.imageUrl || "",
         notes: purchase.notes || "",
       })),
     });
   } catch (error) {
+    console.error("[GET /api/purchases] failed:", error);
     return NextResponse.json(
       { error: error.message || "Failed to load purchases." },
       { status: 500 },
@@ -104,6 +104,7 @@ export async function POST(request) {
       },
     });
   } catch (error) {
+    console.error("[POST /api/purchases] failed:", error);
     return NextResponse.json(
       { error: error.message || "Failed to save purchase." },
       { status: 500 },

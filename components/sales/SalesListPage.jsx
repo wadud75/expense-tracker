@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import InvoicePreviewModal from "@/components/invoices/InvoicePreviewModal";
 import { downloadInvoicePdf } from "@/lib/invoicePrint";
+import { formatListDateTime } from "@/lib/dateFormat";
 import BoxIcon from "@/components/svgs/BoxIcon";
 import CalendarIcon from "@/components/svgs/CalendarIcon";
 import ReceiptIcon from "@/components/svgs/ReceiptIcon";
@@ -12,16 +13,7 @@ import ShoppingBagIcon from "@/components/svgs/ShoppingBagIcon";
 import TakaIcon from "@/components/svgs/TakaIcon";
 
 function formatCurrency(value) {
-  return `Tk ${Number(value || 0).toFixed(2)}`;
-}
-
-function formatDate(value) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return "-";
-  }
-
-  return date.toLocaleString();
+  return `Tk ${Number(value || 0).toFixed(0)}`;
 }
 
 function parseDateInput(value, endOfDay = false) {
@@ -73,7 +65,7 @@ function buildSalesInvoice(group) {
         label: "Warranty",
         value: `${Number(firstSale.warrantyMonths || 0)} month${Number(firstSale.warrantyMonths || 0) === 1 ? "" : "s"}`,
       },
-      { label: "Date", value: formatDate(firstSale.createdAt) },
+      { label: "Date", value: formatListDateTime(firstSale.createdAt) },
     ],
     items: lines.map((sale) => ({
       name: sale.productName || "-",
@@ -299,7 +291,7 @@ export default function SalesListPage() {
           ) : filteredSales.length ? (
             filteredSales.map((sale) => (
               <div key={sale.id} className="sales-register-row sales-register-row-split">
-                <span>{formatDate(sale.createdAt)}</span>
+                <span>{formatListDateTime(sale.createdAt)}</span>
                 <span>{sale.invoiceNo || "-"}</span>
                 <span>{sale.customerName || "Walk-in customer"}</span>
                 <span className="sales-register-text">{sale.customerAddress || "No address provided"}</span>
@@ -358,7 +350,7 @@ export default function SalesListPage() {
                 <div className="sales-mobile-grid">
                   <div>
                     <span>Date</span>
-                    <strong>{formatDate(sale.createdAt)}</strong>
+                    <strong>{formatListDateTime(sale.createdAt)}</strong>
                   </div>
                   <div>
                     <span>Invoice</span>

@@ -3,7 +3,7 @@
 import { downloadInvoicePdf, printInvoice } from "@/lib/invoicePrint";
 
 function formatCurrency(value) {
-  return `Tk ${Number(value || 0).toFixed(2)}`;
+  return `Tk ${Number(value || 0).toFixed(0)}`;
 }
 
 function formatDate(value) {

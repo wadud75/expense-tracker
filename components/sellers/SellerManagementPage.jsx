@@ -9,6 +9,7 @@ import MoneyIcon from "@/components/svgs/MoneyIcon";
 import RefreshIcon from "@/components/svgs/RefreshIcon";
 import SearchIcon from "@/components/svgs/SearchIcon";
 import StoreIcon from "@/components/svgs/StoreIcon";
+import { formatListDate } from "@/lib/dateFormat";
 
 const SELLER_CREATED_EVENT = "seller:created";
 const EMPTY_FORM = {
@@ -28,24 +29,11 @@ function normalizeText(value) {
 }
 
 function formatCurrency(value) {
-  return `Tk ${Number(value || 0).toFixed(2)}`;
+  return `Tk ${Number(value || 0).toFixed(0)}`;
 }
 
 function formatSalary(value) {
   return `Tk ${Number(value || 0).toFixed(0)}`;
-}
-
-function formatDate(value) {
-  if (!value) {
-    return "-";
-  }
-
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) {
-    return "-";
-  }
-
-  return parsed.toLocaleDateString();
 }
 
 function getMonthKey(date = new Date()) {
@@ -697,9 +685,9 @@ export default function SellerManagementPage() {
                     <div><span>Revenue</span><strong>{formatCurrency(seller.revenue)}</strong></div>
                     <div><span>Salary</span><strong>{formatSalary(seller.salary)}</strong></div>
                     <div><span>Status</span><strong>{seller.status || "active"}</strong></div>
-                    <div><span>Last sale</span><strong>{formatDate(seller.lastSaleAt)}</strong></div>
+                    <div><span>Last sale</span><strong>{formatListDate(seller.lastSaleAt)}</strong></div>
                     <div><span>This month</span><strong>{isCurrentMonthPaid ? "Paid" : "Unpaid"}</strong></div>
-                    <div><span>Paid date</span><strong>{currentMonthSalary?.paidAt ? formatDate(currentMonthSalary.paidAt) : "-"}</strong></div>
+                    <div><span>Paid date</span><strong>{currentMonthSalary?.paidAt ? formatListDate(currentMonthSalary.paidAt) : "-"}</strong></div>
                   </div>
 
                   <div className="seller-pro-mobile-actions">
