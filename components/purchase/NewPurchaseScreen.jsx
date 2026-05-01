@@ -5,13 +5,13 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import usePurchaseLanguage from "@/components/purchase/usePurchaseLanguage";
 
-const PAYMENT_METHODS = ["Cash", "Bank", "Card", "Mobile Banking"];
 const EMPTY_MASTER_DATA = {
   category: [],
   supplier: [],
   brand: [],
   model: [],
   variant: [],
+  bank: [],
 };
 
 function ChevronDownIcon() {
@@ -42,18 +42,19 @@ function MasterDataDropdownField({
   addDisabled = false,
   addLabel = "Add",
   inputPlaceholder = "",
+  actionMode = "inline",
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const normalizedValue = String(value || "").trim().toLowerCase();
   const filteredOptions = options.filter((option) => option.name.toLowerCase().includes(normalizedValue));
   const hasMatchingOption = options.some((option) => option.name.trim().toLowerCase() === normalizedValue);
-  const shouldShowAddButton = normalizedValue.length > 0 && !hasMatchingOption;
+  const shouldShowAddButton = normalizedValue.length > 0 && !hasMatchingOption && filteredOptions.length === 0;
   const shouldShowOptions = isOpen && filteredOptions.length > 0;
 
   return (
     <label className="purchase-field-stack">
       <span>{label}</span>
-      <div className="supplier-field-row">
+      <div className={`supplier-field-row${actionMode === "stacked" ? " supplier-field-row-stacked" : ""}`}>
         <div className="purchase-master-field">
           <input
             className="purchase-input purchase-select-input"
@@ -104,31 +105,9 @@ function MasterDataDropdownField({
           <button type="button" className="purchase-ghost-button" onClick={onAdd} disabled={addDisabled}>
             {addLabel}
           </button>
-        ) : (
+        ) : actionMode === "inline" ? (
           <div aria-hidden="true" />
-        )}
-      </div>
-    </label>
-  );
-}
-
-function DropdownField({ label, value, name, onChange, children, required = false }) {
-  return (
-    <label className="purchase-field-stack">
-      <span>{label}</span>
-      <div className="purchase-select-wrap">
-        <select
-          className="purchase-input purchase-select purchase-select-input"
-          name={name}
-          value={value}
-          onChange={onChange}
-          required={required}
-        >
-          {children}
-        </select>
-        <span className="purchase-select-arrow" aria-hidden="true">
-          <ChevronDownIcon />
-        </span>
+        ) : null}
       </div>
     </label>
   );
@@ -158,6 +137,16 @@ function PurchaseFormContent({ modal, t, router }) {
   const paymentAmount = Math.max(Number(formState.paymentAmount) || 0, 0);
   const estimatedTotal = quantity * unitPrice;
   const remainingBalance = Math.max(estimatedTotal - paymentAmount, 0);
+  const paymentOptions = [
+    { id: "cash", name: "Cash" },
+    ...((masterData.bank || []).filter(
+      (option, index, collection) =>
+        String(option.name || "").trim().toLowerCase() !== "cash" &&
+        collection.findIndex(
+          (entry) => String(entry.name || "").trim().toLowerCase() === String(option.name || "").trim().toLowerCase(),
+        ) === index,
+    )),
+  ];
 
   useEffect(() => {
     let isMounted = true;
@@ -195,7 +184,7 @@ function PurchaseFormContent({ modal, t, router }) {
     }));
   };
 
-  async function handleAddMasterItem(type, fieldName, label) {
+  async function handleAddMasterItem(type, fieldName, label, preserveFieldValue = false) {
     const normalizedName = String(formState[fieldName] || "").trim();
     if (!normalizedName) {
       setErrorMessage(`${label} name is required.`);
@@ -245,7 +234,7 @@ function PurchaseFormContent({ modal, t, router }) {
       });
       setFormState((currentValue) => ({
         ...currentValue,
-        [fieldName]: "",
+        [fieldName]: preserveFieldValue ? savedItem.name : "",
       }));
     } catch (error) {
       setErrorMessage(error.message || `Failed to save ${label.toLowerCase()}.`);
@@ -444,13 +433,19 @@ function PurchaseFormContent({ modal, t, router }) {
               </div>
 
               <div className="purchase-grid purchase-grid-two purchase-grid-tight">
-                <DropdownField label={t.paymentMethod} name="paymentMethod" value={formState.paymentMethod} onChange={handleChange}>
-                  {PAYMENT_METHODS.map((method) => (
-                    <option key={method} value={method}>
-                      {method}
-                    </option>
-                  ))}
-                </DropdownField>
+                <MasterDataDropdownField
+                  label={t.paymentMethod}
+                  name="paymentMethod"
+                  value={formState.paymentMethod}
+                  onValueChange={(nextValue) => handleChange({ target: { name: "paymentMethod", value: nextValue } })}
+                  options={paymentOptions}
+                  required
+                  onAdd={() => handleAddMasterItem("bank", "paymentMethod", t.paymentMethod, true)}
+                  addDisabled={savingMasterType === "bank"}
+                  addLabel={savingMasterType === "bank" ? t.adminLoading : t.adminAdd}
+                  inputPlaceholder="Type or select cash / bank"
+                  actionMode="stacked"
+                />
                 <label className="purchase-field-stack">
                   <span>{t.paymentAmount}</span>
                   <input

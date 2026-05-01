@@ -1353,6 +1353,19 @@ html[data-theme="dark"] .dashboard-footer-bottom {
   gap: 10px;
 }
 
+.supplier-field-row-stacked {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.supplier-field-row-stacked .purchase-master-field {
+  min-width: 0;
+}
+
+.supplier-field-row-stacked .purchase-ghost-button {
+  width: 100%;
+  min-width: 0;
+}
+
 .purchase-input,
 .purchase-textarea {
   width: 100%;
