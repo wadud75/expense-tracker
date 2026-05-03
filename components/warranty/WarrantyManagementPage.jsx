@@ -143,6 +143,8 @@ function buildSaleWarranties(sales) {
         id: key,
         source: "sales",
         customerName: sale.customerName || "Walk-in customer",
+        customerAddress: sale.customerAddress || "",
+        customerPhone: sale.customerPhone || "",
         productName: sale.productName || "Unnamed product",
         invoiceNo: sale.invoiceNo || "-",
         purchaseDate: startDate,
@@ -238,7 +240,7 @@ export default function WarrantyManagementPage() {
     return [...normalizedManualRecords, ...autoRecords].sort((left, right) => {
       const leftTime = new Date(left.purchaseDate || 0).getTime();
       const rightTime = new Date(right.purchaseDate || 0).getTime();
-      return rightTime - leftTime;
+      return leftTime - rightTime;
     });
   }, [manualRecords, sales]);
 
@@ -248,7 +250,7 @@ export default function WarrantyManagementPage() {
     return records.filter((record) => {
       const matchesSearch =
         !normalizedSearch ||
-        [record.customerName, record.productName, record.invoiceNo, record.note]
+        [record.customerName, record.customerAddress, record.customerPhone, record.productName, record.note]
           .filter(Boolean)
           .some((value) => value.toLowerCase().includes(normalizedSearch));
 
@@ -507,8 +509,6 @@ export default function WarrantyManagementPage() {
               <div className="warranty-pro-panel-head">
                 <div>
                   <span className="warranty-pro-panel-label">Warranty register</span>
-                  <h3>Customer coverage records</h3>
-                  <p>Search by customer, device, invoice, or note and review current coverage state.</p>
                 </div>
                 <strong>{filteredRecords.length} visible</strong>
               </div>
@@ -518,7 +518,7 @@ export default function WarrantyManagementPage() {
                   <SearchIcon />
                   <input
                     type="text"
-                    placeholder="Search customer, product, invoice, or note"
+                    placeholder="Search customer, phone, address, product, or note"
                     value={searchTerm}
                     onChange={(event) => setSearchTerm(event.target.value)}
                   />
@@ -542,57 +542,73 @@ export default function WarrantyManagementPage() {
                 </button>
               </div>
 
-              <div className="warranty-pro-table-shell">
-                <div className="warranty-pro-table-head warranty-pro-table-head-actions">
-                  <span>Customer</span>
-                  <span>Product</span>
-                  <span>Invoice</span>
-                  <span>Coverage</span>
-                  <span>Status</span>
-                  <span>Actions</span>
-                </div>
-
+              <div className="warranty-pro-table-shell clean-table-card">
                 {isLoading ? (
                   <div className="table-empty">Loading warranty records...</div>
                 ) : filteredRecords.length ? (
-                  <div className="warranty-pro-table-body">
-                    {filteredRecords.map((record) => (
-                      <div key={record.id} className="warranty-pro-row warranty-pro-row-actions-layout">
-                        <span className="warranty-pro-cell warranty-pro-customer-cell">
-                          <strong>{record.customerName}</strong>
-                          <small>{record.note || "No note added"}</small>
-                        </span>
-                        <span className="warranty-pro-cell">
-                          <strong>{record.productName}</strong>
-                          <small>{formatListDate(record.purchaseDate)}</small>
-                        </span>
-                        <span className="warranty-pro-cell">
-                          <strong>{record.invoiceNo}</strong>
-                          <small>{record.source === "sales" ? "Sales record" : "Manual record"}</small>
-                        </span>
-                        <span className="warranty-pro-cell">
-                          <strong>{getDurationLabel(record.warrantyMonths)}</strong>
-                          <small>{getCoverageNote(record)}</small>
-                        </span>
-                        <span className={`due-status due-status-${getStatusTone(record.status)}`}>
-                          {getStatusLabel(record.status)}
-                        </span>
-                        <div className="warranty-pro-list-actions">
-                          <button type="button" className="outline-button warranty-pro-list-action" onClick={() => handleLoadToForm(record)}>
-                            Edit
-                          </button>
-                          {record.source === "manual" ? (
-                            <button
-                              type="button"
-                              className="outline-button warranty-pro-list-action warranty-pro-list-action-danger"
-                              onClick={() => handleDeleteRecord(record)}
-                            >
-                              Delete
-                            </button>
-                          ) : null}
-                        </div>
-                      </div>
-                    ))}
+                  <div className="clean-table-scroll">
+                    <table className="clean-data-table warranty-clean-table">
+                      <thead>
+                        <tr>
+                          <th>Customer</th>
+                          <th>Phone</th>
+                          <th>Address</th>
+                          <th>Product</th>
+                          <th>Purchase date</th>
+                          <th>Coverage</th>
+                          <th>Status</th>
+                          <th>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredRecords.map((record) => (
+                          <tr key={record.id}>
+                            <td className="clean-stack-cell clean-text-cell">
+                              <strong>{record.customerName}</strong>
+                              <span>{record.note || "No note added"}</span>
+                            </td>
+                            <td className="clean-stack-cell clean-text-cell">
+                              <strong>{record.customerPhone || "-"}</strong>
+                              <span>Customer phone</span>
+                            </td>
+                            <td className="clean-stack-cell clean-text-cell">
+                              <strong>{record.customerAddress || "-"}</strong>
+                              <span>Customer address</span>
+                            </td>
+                            <td className="clean-stack-cell clean-text-cell">
+                              <strong>{record.productName}</strong>
+                              <span>{record.source === "sales" ? "Sales record" : "Manual record"}</span>
+                            </td>
+                            <td>{formatListDate(record.purchaseDate)}</td>
+                            <td className="clean-stack-cell clean-text-cell">
+                              <strong>{getDurationLabel(record.warrantyMonths)}</strong>
+                              <span>{getCoverageNote(record)}</span>
+                            </td>
+                            <td className="clean-center-cell">
+                              <span className={`due-status due-status-${getStatusTone(record.status)}`}>
+                                {getStatusLabel(record.status)}
+                              </span>
+                            </td>
+                            <td>
+                              <div className="clean-action-cell">
+                                <button type="button" className="outline-button warranty-pro-list-action" onClick={() => handleLoadToForm(record)}>
+                                  Edit
+                                </button>
+                                {record.source === "manual" ? (
+                                  <button
+                                    type="button"
+                                    className="outline-button warranty-pro-list-action warranty-pro-list-action-danger"
+                                    onClick={() => handleDeleteRecord(record)}
+                                  >
+                                    Delete
+                                  </button>
+                                ) : null}
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 ) : (
                   <div className="table-empty">No warranty records match the current filters.</div>
@@ -613,7 +629,8 @@ export default function WarrantyManagementPage() {
                         </span>
                       </div>
                       <div className="warranty-pro-mobile-grid-inner">
-                        <div><span>Invoice</span><strong>{record.invoiceNo}</strong></div>
+                        <div><span>Phone</span><strong>{record.customerPhone || "-"}</strong></div>
+                        <div><span>Address</span><strong>{record.customerAddress || "-"}</strong></div>
                         <div><span>Purchase</span><strong>{formatListDate(record.purchaseDate)}</strong></div>
                         <div><span>Coverage</span><strong>{getDurationLabel(record.warrantyMonths)}</strong></div>
                         <div><span>Note</span><strong>{record.note || "No note added"}</strong></div>

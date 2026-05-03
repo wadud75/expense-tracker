@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import CloseIcon from "@/components/svgs/CloseIcon";
 import MoneyIcon from "@/components/svgs/MoneyIcon";
 import { formatListDate } from "@/lib/dateFormat";
 
@@ -55,6 +57,7 @@ function getStatusTone(status) {
 }
 
 export default function SellerSalaryHistoryContent({ sellerId, modal = false }) {
+  const router = useRouter();
   const [seller, setSeller] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [actionKey, setActionKey] = useState("");
@@ -152,6 +155,16 @@ export default function SellerSalaryHistoryContent({ sellerId, modal = false }) 
   return (
     <section className={modal ? "seller-page-shell seller-page-shell-modal" : "content-area seller-page-shell seller-salary-page"}>
       <div className="seller-page-head">
+        {modal ? (
+          <button
+            type="button"
+            className="outline-button seller-history-modal-close"
+            aria-label="Close seller history"
+            onClick={() => router.back()}
+          >
+            <CloseIcon />
+          </button>
+        ) : null}
         <span className="seller-pro-panel-label">Seller payroll</span>
         <h1>{isLoading ? "Loading seller history" : seller?.name || "Seller history"}</h1>
         <p>Review monthly salary status and update any month between paid and unpaid without leaving the seller workspace.</p>

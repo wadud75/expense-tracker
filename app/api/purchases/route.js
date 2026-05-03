@@ -44,7 +44,7 @@ export async function GET() {
     if (unauthorizedResponse) return unauthorizedResponse;
 
     const collection = await getCollection();
-    const purchases = await collection.find({}).sort({ createdAt: -1 }).limit(100).toArray();
+    const purchases = await collection.find({}).sort({ createdAt: 1 }).limit(100).toArray();
 
     return NextResponse.json({
       purchases: purchases.map((purchase) => ({

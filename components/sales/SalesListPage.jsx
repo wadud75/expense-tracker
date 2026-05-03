@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import InvoicePreviewModal from "@/components/invoices/InvoicePreviewModal";
 import { downloadInvoicePdf } from "@/lib/invoicePrint";
-import { formatListDateTime } from "@/lib/dateFormat";
+import { formatListDate, formatListDateTime } from "@/lib/dateFormat";
 import BoxIcon from "@/components/svgs/BoxIcon";
 import CalendarIcon from "@/components/svgs/CalendarIcon";
 import ReceiptIcon from "@/components/svgs/ReceiptIcon";
@@ -42,6 +42,10 @@ function getSaleDue(sale) {
   return Math.max((Number(sale.invoiceTotal) || 0) - (Number(sale.paidAmount) || 0), 0);
 }
 
+function getAtsLabel(sale) {
+  return String(sale?.atsMode || "").trim().toUpperCase() === "ATS" ? "Yes" : "No";
+}
+
 function buildSalesInvoice(group) {
   const lines = group.sales || [];
   const firstSale = lines[0] || {};
@@ -66,10 +70,11 @@ function buildSalesInvoice(group) {
         value: `${Number(firstSale.warrantyMonths || 0)} month${Number(firstSale.warrantyMonths || 0) === 1 ? "" : "s"}`,
       },
       { label: "Date", value: formatListDateTime(firstSale.createdAt) },
+      { label: "Due payment date", value: formatListDate(firstSale.dueDate || firstSale.createdAt) },
     ],
     items: lines.map((sale) => ({
       name: sale.productName || "-",
-      description: sale.note || "POS sale item",
+      description: [`ATS: ${getAtsLabel(sale)}`, sale.note || "POS sale item"].filter(Boolean).join(" | "),
       quantity: Number(sale.quantity) || 0,
       unitPrice: Number(sale.unitPrice) || 0,
       lineTotal: Number(sale.lineTotal) || 0,
@@ -133,6 +138,7 @@ export default function SalesListPage() {
           sale.customerAddress,
           sale.sellerName,
           sale.productName,
+          getAtsLabel(sale),
           sale.paymentMethod,
           sale.note,
         ]
@@ -276,6 +282,7 @@ export default function SalesListPage() {
             <span>Address</span>
             <span>Seller</span>
             <span>Product</span>
+            <span>ATS</span>
             <span>Qty</span>
             <span>Unit Price</span>
             <span>Line Total</span>
@@ -297,6 +304,7 @@ export default function SalesListPage() {
                 <span className="sales-register-text">{sale.customerAddress || "No address provided"}</span>
                 <span>{sale.sellerName || "No seller assigned"}</span>
                 <span className="sales-register-text sales-register-product">{sale.productName}</span>
+                <span>{getAtsLabel(sale)}</span>
                 <span>{sale.quantity}</span>
                 <span>{formatCurrency(sale.unitPrice)}</span>
                 <span>{formatCurrency(sale.lineTotal)}</span>
@@ -367,6 +375,10 @@ export default function SalesListPage() {
                   <div>
                     <span>Qty</span>
                     <strong>{sale.quantity}</strong>
+                  </div>
+                  <div>
+                    <span>ATS</span>
+                    <strong>{getAtsLabel(sale)}</strong>
                   </div>
                   <div>
                     <span>Unit price</span>

@@ -217,6 +217,22 @@ function buildSalesSummary(sales) {
   );
 }
 
+function getSaleDue(sale) {
+  return Math.max((Number(sale.invoiceTotal) || 0) - (Number(sale.paidAmount) || 0), 0);
+}
+
+function getSellerSalesHistory(sales, sellerName) {
+  const normalizedSellerName = normalizeText(sellerName);
+
+  if (!normalizedSellerName) {
+    return [];
+  }
+
+  return sales
+    .filter((sale) => normalizeText(sale.sellerName) === normalizedSellerName)
+    .sort((left, right) => new Date(right.createdAt || 0).getTime() - new Date(left.createdAt || 0).getTime());
+}
+
 export default function SellerManagementPage() {
   const [sellers, setSellers] = useState([]);
   const [sales, setSales] = useState([]);
@@ -226,7 +242,7 @@ export default function SellerManagementPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [salaryActionKey, setSalaryActionKey] = useState("");
+  const [salesHistorySeller, setSalesHistorySeller] = useState(null);
   const [feedback, setFeedback] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const deferredSearchTerm = useDeferredValue(searchTerm);
@@ -340,6 +356,25 @@ export default function SellerManagementPage() {
   const leadingCount = sellerRecords.filter((seller) => seller.activity === "leading").length;
   const activeCount = sellerRecords.filter((seller) => seller.activity === "active").length;
   const paidThisMonthCount = sellerRecords.filter((seller) => seller.salaryHistory[0]?.status === "paid").length;
+  const selectedSellerSales = useMemo(
+    () => getSellerSalesHistory(sales, salesHistorySeller?.name),
+    [sales, salesHistorySeller?.name],
+  );
+  const selectedSellerSalesSummary = useMemo(
+    () =>
+      selectedSellerSales.reduce(
+        (summary, sale) => {
+          summary.invoices.add(sale.invoiceNo || sale.id);
+          summary.units += Number(sale.quantity || 0);
+          summary.revenue += Number(sale.lineTotal || 0);
+          summary.paid += Number(sale.paidAmount || 0);
+          summary.due += getSaleDue(sale);
+          return summary;
+        },
+        { invoices: new Set(), units: 0, revenue: 0, paid: 0, due: 0 },
+      ),
+    [selectedSellerSales],
+  );
 
   function openEditModal(seller) {
     setForm({
@@ -361,6 +396,16 @@ export default function SellerManagementPage() {
   function closeModal() {
     setForm(EMPTY_FORM);
     setIsEditModalOpen(false);
+  }
+
+  function openSalesHistoryModal(seller) {
+    setSalesHistorySeller(seller);
+    setFeedback("");
+    setErrorMessage("");
+  }
+
+  function closeSalesHistoryModal() {
+    setSalesHistorySeller(null);
   }
 
   async function handleSubmit(event) {
@@ -446,53 +491,12 @@ export default function SellerManagementPage() {
     }
   }
 
-  async function handleSalaryAction(seller, monthKey, action) {
-    const actionKey = `${seller.id}:${monthKey}:${action}`;
-    if (salaryActionKey === actionKey) return;
-
-    try {
-      setSalaryActionKey(actionKey);
-      setErrorMessage("");
-      setFeedback("");
-
-      const response = await fetch("/api/master-data", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          id: seller.id,
-          type: "seller",
-          action,
-          monthKey,
-          amount: seller.salary,
-        }),
-      });
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || "Failed to update salary payment.");
-      }
-
-      setSellers((current) => current.map((entry) => (entry.id === result.item.id ? result.item : entry)));
-      setFeedback(
-        action === "pay"
-          ? `${seller.name} salary marked paid for ${formatMonthLabel(monthKey)}.`
-          : `${seller.name} salary marked unpaid for ${formatMonthLabel(monthKey)}.`,
-      );
-    } catch (error) {
-      setErrorMessage(error.message || "Failed to update salary payment.");
-    } finally {
-      setSalaryActionKey("");
-    }
-  }
-
   return (
     <>
       <section className="content-area seller-page seller-page-pro">
         <div className="seller-pro-hero">
           <div className="seller-pro-hero-copy">
-            <span className="seller-pro-eyebrow">Seller Operations</span>
             <h2>Seller management</h2>
-            <p>Manage your seller roster with a cleaner operational view of revenue, collection exposure, and recent performance.</p>
           </div>
 
           <div className="seller-pro-hero-actions">
@@ -556,8 +560,6 @@ export default function SellerManagementPage() {
           <div className="seller-pro-panel-head">
             <div>
               <span className="seller-pro-panel-label">Seller register</span>
-              <h3>Commercial performance desk</h3>
-              <p>Search sellers, review contribution, and keep the checkout roster clean and up to date.</p>
             </div>
             <strong>{filteredSellers.length} visible</strong>
           </div>
@@ -588,72 +590,82 @@ export default function SellerManagementPage() {
             </div>
           </div>
 
-          <div className="seller-pro-table-shell">
-            <div className="seller-pro-table-head">
-              <span>Seller</span>
-              <span>Contact</span>
-              <span>Role</span>
-              <span>Activity</span>
-              <span>Revenue</span>
-              <span>Salary</span>
-              <span>Actions</span>
-            </div>
-
+          <div className="seller-pro-table-shell clean-table-card">
             {isLoading ? (
               <div className="table-empty">Loading seller workspace...</div>
             ) : filteredSellers.length ? (
-              <div className="seller-pro-table-body">
-                {filteredSellers.map((seller) => {
-                  const currentMonthSalary = seller.salaryHistory[0];
-                  const isCurrentMonthPaid = currentMonthSalary?.status === "paid";
-                  const currentPayActionKey = `${seller.id}:${currentMonthSalary?.monthKey}:pay`;
+              <div className="clean-table-scroll">
+                <table className="clean-data-table seller-clean-table">
+                  <thead>
+                    <tr>
+                      <th>Seller</th>
+                      <th>Contact</th>
+                      <th>Role</th>
+                      <th>Activity</th>
+                      <th>Revenue</th>
+                      <th>Salary</th>
+                      <th>Notice</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredSellers.map((seller) => {
+                      const currentMonthSalary = seller.salaryHistory[0];
+                      const isCurrentMonthPaid = currentMonthSalary?.status === "paid";
 
-                  return (
-                    <div key={seller.id} className="seller-pro-row">
-                      <span className="seller-pro-cell">
-                        <strong>{seller.name}</strong>
-                        <small>{seller.address || "No address added"}</small>
-                      </span>
-                      <span className="seller-pro-cell">
-                        <strong>{seller.phone || "-"}</strong>
-                        <small>{seller.email || "No email added"}</small>
-                      </span>
-                      <span className="seller-pro-cell">
-                        <strong>{getRoleLabel(seller.role)}</strong>
-                        <small>{seller.status || "active"}</small>
-                      </span>
-                      <span className="seller-pro-cell">
-                        <span className={`due-status due-status-${getActivityTone(seller.activity)}`}>{seller.activityLabel}</span>
-                        <small>{seller.activityNote}</small>
-                      </span>
-                      <span className="seller-pro-cell">
-                        <strong>{formatCurrency(seller.revenue)}</strong>
-                        <small>{seller.orders} invoices, {seller.units} units</small>
-                      </span>
-                      <span className="seller-pro-cell">
-                        <strong>{formatSalary(seller.salary)}</strong>
-                        <small>
-                          {currentMonthSalary?.label}: {isCurrentMonthPaid ? "Paid" : "Unpaid"}
-                        </small>
-                      </span>
-                      <div className="seller-pro-row-actions">
-                        <button
-                          type="button"
-                          className="outline-button"
-                          onClick={() => handleSalaryAction(seller, currentMonthSalary.monthKey, "pay")}
-                          disabled={isCurrentMonthPaid || salaryActionKey === currentPayActionKey}
-                        >
-                          {salaryActionKey === currentPayActionKey ? "Paying..." : "Pay"}
-                        </button>
-                        <Link href={`/sellers/${seller.id}/history`} className="outline-button">
-                          History
-                        </Link>
-                        <button type="button" className="outline-button" onClick={() => openEditModal(seller)}>Edit</button>
-                        <button type="button" className="outline-button seller-pro-delete-button" onClick={() => handleDelete(seller)}>Delete</button>
-                      </div>
-                    </div>
-                  );
-                })}
+                      return (
+                        <tr key={seller.id}>
+                          <td className="clean-stack-cell clean-text-cell">
+                            <strong>{seller.name}</strong>
+                            <span>{seller.address || "No address added"}</span>
+                          </td>
+                          <td className="clean-stack-cell clean-text-cell">
+                            <strong>{seller.phone || "-"}</strong>
+                            <span>{seller.address || "No address added"}</span>
+                          </td>
+                          <td className="clean-stack-cell clean-text-cell">
+                            <strong>{getRoleLabel(seller.role)}</strong>
+                            <span>{seller.status || "active"}</span>
+                          </td>
+                          <td className="clean-stack-cell clean-text-cell">
+                            <span className={`due-status due-status-${getActivityTone(seller.activity)}`}>{seller.activityLabel}</span>
+                            <span>{seller.activityNote}</span>
+                          </td>
+                          <td className="clean-stack-cell clean-text-cell">
+                            <strong>{formatCurrency(seller.revenue)}</strong>
+                            <span>{seller.orders} invoices, {seller.units} units</span>
+                          </td>
+                          <td className="clean-stack-cell clean-text-cell">
+                            <strong>{formatSalary(seller.salary)}</strong>
+                            <span>
+                              {currentMonthSalary?.label}: {isCurrentMonthPaid ? "Paid" : "Unpaid"}
+                            </span>
+                          </td>
+                          <td className="clean-stack-cell clean-text-cell">
+                            <strong>{seller.notes || "No notice"}</strong>
+                            <span>Seller note</span>
+                          </td>
+                          <td>
+                            <div className="clean-action-cell seller-clean-actions">
+                              <button
+                                type="button"
+                                className="outline-button"
+                                onClick={() => openSalesHistoryModal(seller)}
+                              >
+                                Sales
+                              </button>
+                              <Link href={`/sellers/${seller.id}/history`} className="outline-button">
+                                Payment
+                              </Link>
+                              <button type="button" className="outline-button" onClick={() => openEditModal(seller)}>Edit</button>
+                              <button type="button" className="outline-button seller-pro-delete-button" onClick={() => handleDelete(seller)}>Delete</button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
             ) : (
               <div className="table-empty">No sellers match the current search and filter.</div>
@@ -667,7 +679,6 @@ export default function SellerManagementPage() {
                   {(() => {
                     const currentMonthSalary = seller.salaryHistory[0];
                     const isCurrentMonthPaid = currentMonthSalary?.status === "paid";
-                    const currentPayActionKey = `${seller.id}:${currentMonthSalary?.monthKey}:pay`;
 
                     return (
                       <>
@@ -685,6 +696,7 @@ export default function SellerManagementPage() {
                     <div><span>Revenue</span><strong>{formatCurrency(seller.revenue)}</strong></div>
                     <div><span>Salary</span><strong>{formatSalary(seller.salary)}</strong></div>
                     <div><span>Status</span><strong>{seller.status || "active"}</strong></div>
+                    <div><span>Notice</span><strong>{seller.notes || "No notice"}</strong></div>
                     <div><span>Last sale</span><strong>{formatListDate(seller.lastSaleAt)}</strong></div>
                     <div><span>This month</span><strong>{isCurrentMonthPaid ? "Paid" : "Unpaid"}</strong></div>
                     <div><span>Paid date</span><strong>{currentMonthSalary?.paidAt ? formatListDate(currentMonthSalary.paidAt) : "-"}</strong></div>
@@ -694,12 +706,11 @@ export default function SellerManagementPage() {
                     <button
                       type="button"
                       className="outline-button"
-                      onClick={() => handleSalaryAction(seller, currentMonthSalary.monthKey, "pay")}
-                      disabled={isCurrentMonthPaid || salaryActionKey === currentPayActionKey}
+                      onClick={() => openSalesHistoryModal(seller)}
                     >
-                      {salaryActionKey === currentPayActionKey ? "Paying..." : "Pay"}
+                      Sales
                     </button>
-                    <Link href={`/sellers/${seller.id}/history`} className="outline-button">History</Link>
+                    <Link href={`/sellers/${seller.id}/history`} className="outline-button">Payment</Link>
                     <button type="button" className="outline-button" onClick={() => openEditModal(seller)}>Edit</button>
                     <button type="button" className="outline-button seller-pro-delete-button" onClick={() => handleDelete(seller)}>Delete</button>
                   </div>
@@ -792,6 +803,71 @@ export default function SellerManagementPage() {
                       <button type="button" className="outline-button" onClick={closeModal}>Cancel</button>
                     </div>
                   </form>
+                </section>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {salesHistorySeller ? (
+        <div className="route-modal-overlay" onClick={closeSalesHistoryModal}>
+          <div className="route-modal-shell customer-form-modal-shell seller-sales-modal-shell" onClick={(event) => event.stopPropagation()}>
+            <div className="purchase-modal-card">
+              <div className="purchase-modal-header seller-modal-header">
+                <div className="purchase-header-copy">
+                  <div>
+                    <span className="seller-pro-panel-label">Seller sales</span>
+                    <h1>{salesHistorySeller.name}</h1>
+                    <p>Sales history with date, invoice, customer, product, quantity, and payment details.</p>
+                  </div>
+                </div>
+                <button type="button" className="outline-button seller-modal-close" onClick={closeSalesHistoryModal}>
+                  <CloseIcon />
+                </button>
+              </div>
+
+              <div className="purchase-modal-body">
+                <section className="purchase-panel seller-sales-history-panel">
+                  <div className="seller-sales-summary-grid">
+                    <div>
+                      <span>Invoices</span>
+                      <strong>{selectedSellerSalesSummary.invoices.size}</strong>
+                    </div>
+                    <div>
+                      <span>Units</span>
+                      <strong>{selectedSellerSalesSummary.units}</strong>
+                    </div>
+                    <div>
+                      <span>Revenue</span>
+                      <strong>{formatCurrency(selectedSellerSalesSummary.revenue)}</strong>
+                    </div>
+                    <div>
+                      <span>Due</span>
+                      <strong>{formatCurrency(selectedSellerSalesSummary.due)}</strong>
+                    </div>
+                  </div>
+
+                  {selectedSellerSales.length ? (
+                    <div className="seller-sales-history-stack">
+                      {selectedSellerSales.map((sale) => (
+                        <article key={sale.id} className="seller-sales-history-item">
+                          <div className="seller-sales-history-copy">
+                            <strong>{formatListDate(sale.createdAt)}</strong>
+                            <p>{sale.invoiceNo || "-"} | {sale.customerName || "Walk-in customer"}</p>
+                            <small>{sale.productName || "-"} | Qty {sale.quantity || 0}</small>
+                          </div>
+                          <div className="seller-sales-history-amounts">
+                            <strong>{formatCurrency(sale.lineTotal)}</strong>
+                            <span>Paid {formatCurrency(sale.paidAmount)}</span>
+                            <span>Due {formatCurrency(getSaleDue(sale))}</span>
+                          </div>
+                        </article>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="table-empty seller-sales-history-empty">No sales history recorded for this seller yet.</div>
+                  )}
                 </section>
               </div>
             </div>

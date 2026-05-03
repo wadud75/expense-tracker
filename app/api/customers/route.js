@@ -65,7 +65,7 @@ export async function GET() {
     if (unauthorizedResponse) return unauthorizedResponse;
 
     const collection = await getCollection();
-    const customers = await collection.find({}).sort({ updatedAt: -1, createdAt: -1 }).toArray();
+    const customers = await collection.find({}).sort({ createdAt: 1, updatedAt: 1 }).toArray();
 
     return NextResponse.json({
       customers: customers.map(toCustomerPayload),

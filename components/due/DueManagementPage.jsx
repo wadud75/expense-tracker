@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import AlertTriangleIcon from "@/components/svgs/AlertTriangleIcon";
 import CalendarIcon from "@/components/svgs/CalendarIcon";
 import CheckIcon from "@/components/svgs/CheckIcon";
@@ -30,6 +30,29 @@ function formatCurrency(value) {
   return `Tk ${Number(value || 0).toFixed(0)}`;
 }
 
+function formatSaleDate(value) {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "-";
+  }
+
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).formatToParts(date);
+  const partMap = parts.reduce((summary, part) => {
+    if (part.type !== "literal") {
+      summary[part.type] = part.value;
+    }
+
+    return summary;
+  }, {});
+
+  return `${partMap.day} ${String(partMap.month || "").toLowerCase()} ${partMap.year}`;
+}
+
 function normalizeStatusPriority(status) {
   if (status === "overdue") {
     return 0;
@@ -40,6 +63,17 @@ function normalizeStatusPriority(status) {
   }
 
   return 2;
+}
+
+function getRecordEntryTime(record) {
+  const createdAt = new Date(record.createdAt).getTime();
+  const dueDate = new Date(record.dueDate).getTime();
+
+  if (Number.isFinite(createdAt)) {
+    return createdAt;
+  }
+
+  return Number.isFinite(dueDate) ? dueDate : 0;
 }
 
 function getMetaLine(record) {
@@ -65,6 +99,10 @@ function getPaymentButtonLabel(direction) {
   return direction === "receivable" ? "Collect" : "Pay";
 }
 
+function getRecordDomKey(record) {
+  return `${record.sourceType}-${record.id}`;
+}
+
 export default function DueManagementPage() {
   const [records, setRecords] = useState([]);
   const [paymentAccounts, setPaymentAccounts] = useState([{ id: "cash", name: DEFAULT_PAYMENT_ACCOUNT }]);
@@ -88,8 +126,10 @@ export default function DueManagementPage() {
   const [paymentAmount, setPaymentAmount] = useState("");
   const [paymentAccount, setPaymentAccount] = useState(DEFAULT_PAYMENT_ACCOUNT);
   const [activePaymentId, setActivePaymentId] = useState("");
+  const [highlightedRecordKey, setHighlightedRecordKey] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+  const highlightTimerRef = useRef(null);
 
   async function loadDueData() {
     try {
@@ -134,6 +174,12 @@ export default function DueManagementPage() {
 
   useEffect(() => {
     loadDueData();
+
+    return () => {
+      if (highlightTimerRef.current) {
+        clearTimeout(highlightTimerRef.current);
+      }
+    };
   }, []);
 
   const filteredRecords = useMemo(() => {
@@ -141,6 +187,10 @@ export default function DueManagementPage() {
 
     return [...records]
       .filter((record) => {
+        if (record.status === "settled") {
+          return false;
+        }
+
         const matchesSearch =
           !normalizedSearch ||
           [
@@ -168,15 +218,12 @@ export default function DueManagementPage() {
         return true;
       })
       .sort((left, right) => {
-        const priorityDelta =
-          normalizeStatusPriority(left.status) - normalizeStatusPriority(right.status);
-        if (priorityDelta !== 0) {
-          return priorityDelta;
+        const timeDelta = getRecordEntryTime(left) - getRecordEntryTime(right);
+        if (timeDelta !== 0) {
+          return timeDelta;
         }
 
-        const leftTime = left.dueDate ? new Date(left.dueDate).getTime() : 0;
-        const rightTime = right.dueDate ? new Date(right.dueDate).getTime() : 0;
-        return rightTime - leftTime;
+        return normalizeStatusPriority(left.status) - normalizeStatusPriority(right.status);
       });
   }, [directionFilter, records, searchTerm, sourceFilter]);
 
@@ -260,6 +307,25 @@ export default function DueManagementPage() {
     setPaymentAccount(DEFAULT_PAYMENT_ACCOUNT);
   }
 
+  function handleFocusRecord(record) {
+    const recordKey = getRecordDomKey(record);
+    setHighlightedRecordKey(recordKey);
+
+    if (highlightTimerRef.current) {
+      clearTimeout(highlightTimerRef.current);
+    }
+
+    window.requestAnimationFrame(() => {
+      const targets = Array.from(document.querySelectorAll(`[data-due-record-key="${recordKey}"]`));
+      const target = targets.find((element) => element.getClientRects().length) || targets[0];
+      target?.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
+    });
+
+    highlightTimerRef.current = setTimeout(() => {
+      setHighlightedRecordKey("");
+    }, 2600);
+  }
+
   async function handleRecordPayment() {
     const draftAmount = Number(paymentAmount || 0);
     const record = paymentRecord;
@@ -333,48 +399,44 @@ export default function DueManagementPage() {
         </div>
       </div>
 
-      <div className="due-summary-grid">
-        <article className="due-summary-card due-summary-card-green">
-          <span className="due-summary-icon">
+      <div className="stats-grid due-summary-grid">
+        <article className="stat-card stat-green">
+          <span className="stat-icon">
             <TakaIcon />
           </span>
           <div>
-            <span>Total receivable</span>
+            <p>Total receivable</p>
             <strong>{formatCurrency(summary.totalReceivable)}</strong>
-            <p>Outstanding collections expected from customers and manual claims</p>
           </div>
         </article>
 
-        <article className="due-summary-card due-summary-card-rose">
-          <span className="due-summary-icon">
+        <article className="stat-card stat-rose">
+          <span className="stat-icon">
             <MoneyIcon />
           </span>
           <div>
-            <span>Total payable</span>
+            <p>Total payable</p>
             <strong>{formatCurrency(summary.totalPayable)}</strong>
-            <p>Unsettled supplier bills and manual obligations</p>
           </div>
         </article>
 
-        <article className="due-summary-card due-summary-card-amber">
-          <span className="due-summary-icon">
+        <article className="stat-card stat-amber">
+          <span className="stat-icon">
             <AlertTriangleIcon />
           </span>
           <div>
-            <span>Overdue exposure</span>
+            <p>Overdue exposure</p>
             <strong>{formatCurrency(summary.overdueAmount)}</strong>
-            <p>{summary.overdueCount || 0} records are already past their due date</p>
           </div>
         </article>
 
-        <article className="due-summary-card due-summary-card-blue">
-          <span className="due-summary-icon">
+        <article className="stat-card stat-sky">
+          <span className="stat-icon">
             <ReceiptIcon />
           </span>
           <div>
-            <span>Open records</span>
+            <p>Open records</p>
             <strong>{summary.openCount || 0}</strong>
-            <p>{summary.settledCount || 0} records are fully settled</p>
           </div>
         </article>
       </div>
@@ -436,8 +498,11 @@ export default function DueManagementPage() {
           <div className="due-table-card">
             <div className="due-table-head">
               <span>Party</span>
+              <span>Phone</span>
+              <span>Address</span>
               <span>Source</span>
               <span>Reference</span>
+              <span>Sale date</span>
               <span>Due date</span>
               <span>Total</span>
               <span>Paid</span>
@@ -448,16 +513,28 @@ export default function DueManagementPage() {
             {isLoading ? (
               <div className="table-empty">Loading due records...</div>
             ) : filteredRecords.length ? (
-              filteredRecords.map((record) => (
-                <div key={`${record.sourceType}-${record.id}`} className="due-table-row">
+              filteredRecords.map((record) => {
+                const recordKey = getRecordDomKey(record);
+
+                return (
+                <div
+                  key={recordKey}
+                  className={`due-table-row${highlightedRecordKey === recordKey ? " due-record-highlight" : ""}`}
+                  data-due-record-key={recordKey}
+                >
                   <div className="due-party-block">
                     <strong>{record.partyName}</strong>
                     <p>{getMetaLine(record)}</p>
                   </div>
-                  <span className={`due-pill due-pill-${record.direction}`}>
-                    {record.sourceLabel}
+                  <span>{record.meta?.customerPhone || "-"}</span>
+                  <span>{record.meta?.customerAddress || "-"}</span>
+                  <span className="due-pill-cell">
+                    <span className={`due-pill due-pill-${record.direction}`}>
+                      {record.sourceLabel}
+                    </span>
                   </span>
                   <span>{record.reference || "-"}</span>
+                  <span>{formatSaleDate(record.createdAt)}</span>
                   <span>{formatListDate(record.dueDate || record.createdAt)}</span>
                   <span>{formatCurrency(record.totalAmount)}</span>
                   <span>{formatCurrency(record.paidAmount)}</span>
@@ -489,7 +566,8 @@ export default function DueManagementPage() {
                     )}
                   </div>
                 </div>
-              ))
+                );
+              })
             ) : (
               <div className="table-empty">No due records match the current filters.</div>
             )}
@@ -497,8 +575,15 @@ export default function DueManagementPage() {
 
           {!isLoading && filteredRecords.length ? (
             <div className="due-mobile-grid">
-              {filteredRecords.map((record) => (
-                <article key={`mobile-${record.sourceType}-${record.id}`} className="due-mobile-card">
+              {filteredRecords.map((record) => {
+                const recordKey = getRecordDomKey(record);
+
+                return (
+                <article
+                  key={`mobile-${recordKey}`}
+                  className={`due-mobile-card${highlightedRecordKey === recordKey ? " due-record-highlight" : ""}`}
+                  data-due-record-key={recordKey}
+                >
                   <div className="due-mobile-head">
                     <div>
                       <strong>{record.partyName}</strong>
@@ -508,8 +593,20 @@ export default function DueManagementPage() {
 
                   <div className="due-mobile-details">
                     <div>
+                      <span>Phone</span>
+                      <strong>{record.meta?.customerPhone || "-"}</strong>
+                    </div>
+                    <div>
+                      <span>Address</span>
+                      <strong>{record.meta?.customerAddress || "-"}</strong>
+                    </div>
+                    <div>
                       <span>Reference</span>
                       <strong>{record.reference || "-"}</strong>
+                    </div>
+                    <div>
+                      <span>Sale date</span>
+                      <strong>{formatSaleDate(record.createdAt)}</strong>
                     </div>
                     <div>
                       <span>Due date</span>
@@ -569,7 +666,8 @@ export default function DueManagementPage() {
                     </div>
                   ) : null}
                 </article>
-              ))}
+                );
+              })}
             </div>
           ) : null}
         </div>
@@ -588,8 +686,16 @@ export default function DueManagementPage() {
 
             <div className="due-focus-list">
               {focusItems.length ? (
-                focusItems.map((record) => (
-                  <article key={`focus-${record.sourceType}-${record.id}`} className="due-focus-item">
+                focusItems.map((record) => {
+                  const recordKey = getRecordDomKey(record);
+
+                  return (
+                  <button
+                    key={`focus-${recordKey}`}
+                    type="button"
+                    className={`due-focus-item${highlightedRecordKey === recordKey ? " due-focus-item-active" : ""}`}
+                    onClick={() => handleFocusRecord(record)}
+                  >
                     <div className="due-focus-copy">
                       <strong>{record.partyName}</strong>
                       <p>{record.reference || record.sourceLabel}</p>
@@ -598,8 +704,9 @@ export default function DueManagementPage() {
                       <span className={`due-status due-status-${record.status}`}>{record.status}</span>
                       <strong>{formatCurrency(record.dueAmount)}</strong>
                     </div>
-                  </article>
-                ))
+                  </button>
+                  );
+                })
               ) : (
                 <div className="sales-empty-state due-empty-state">
                   <div className="sales-empty-icon">

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import BoxIcon from "@/components/svgs/BoxIcon";
 import CloseIcon from "@/components/svgs/CloseIcon";
+import GlobeIcon from "@/components/svgs/GlobeIcon";
 import ReceiptIcon from "@/components/svgs/ReceiptIcon";
 import RefreshIcon from "@/components/svgs/RefreshIcon";
 import ShoppingBagIcon from "@/components/svgs/ShoppingBagIcon";
@@ -13,6 +14,8 @@ const EMPTY_MASTER_DATA = {
   seller: [],
   bank: [],
 };
+const ATS_OPTIONS = ["ATS", "WITHOUT ATS"];
+const STOCK_CARD_TONES = ["stat-card stat-lavender", "stat-card stat-sky", "stat-card stat-green"];
 
 const DEFAULT_PAYMENT_ACCOUNT = "Cash";
 const EMPTY_SELLER_FORM = {
@@ -41,10 +44,6 @@ function formatCurrency(value) {
 
 function formatUnits(value) {
   return `${Number(value || 0)} pcs`;
-}
-
-function getProductMeta(product) {
-  return [product.categoryName, product.brandName, product.variantName].filter(Boolean).join(" | ");
 }
 
 function getCartItemMeta(product) {
@@ -215,13 +214,15 @@ export default function SalesPosPage() {
   const [masterData, setMasterData] = useState(EMPTY_MASTER_DATA);
   const [cart, setCart] = useState([]);
   const [productName, setProductName] = useState("");
+  const [productAtsMode, setProductAtsMode] = useState("ATS");
   const [productQuantity, setProductQuantity] = useState("1");
   const [customerName, setCustomerName] = useState("");
   const [sellerName, setSellerName] = useState("");
-  const [paymentAccount, setPaymentAccount] = useState(DEFAULT_PAYMENT_ACCOUNT);
+  const [paymentAccount, setPaymentAccount] = useState("");
   const [paidAmount, setPaidAmount] = useState("");
+  const [dueDate, setDueDate] = useState("");
   const [profitAmount, setProfitAmount] = useState("");
-  const [warrantyMonths, setWarrantyMonths] = useState("0");
+  const [warrantyMonths, setWarrantyMonths] = useState("");
   const [note, setNote] = useState("");
   const [customerForm, setCustomerForm] = useState(EMPTY_CUSTOMER_FORM);
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
@@ -302,13 +303,6 @@ export default function SalesPosPage() {
     };
   }, []);
 
-  const stockByProduct = useMemo(() => {
-    return cart.reduce((summary, item) => {
-      summary[item.id] = item.quantity;
-      return summary;
-    }, {});
-  }, [cart]);
-
   const cartSummary = useMemo(() => {
     const checkoutLines = buildCheckoutLines(cart, profitAmount);
 
@@ -322,13 +316,46 @@ export default function SalesPosPage() {
       { lines: 0, units: 0, subtotal: 0, checkoutLines },
     );
   }, [cart, profitAmount]);
+  const stockCards = useMemo(() => {
+    const brandNames = Array.from(
+      new Set(
+        products
+          .map((product) => String(product.brandName || "").trim())
+          .filter(Boolean),
+      ),
+    ).sort((left, right) => left.localeCompare(right));
+
+    const totals = { total: 0 };
+    brandNames.forEach((brandName) => {
+      totals[brandName.toLowerCase()] = 0;
+    });
+
+    products.forEach((product) => {
+      const quantity = Number(product.currentStock || 0);
+      totals.total += quantity;
+      const brandKey = String(product.brandName || "").trim().toLowerCase();
+      if (brandKey && Object.prototype.hasOwnProperty.call(totals, brandKey)) {
+        totals[brandKey] += quantity;
+      }
+    });
+
+    return [
+      { key: "total", label: "Total Stock", value: totals.total, tone: STOCK_CARD_TONES[0], icon: BoxIcon },
+      ...brandNames.map((brandName, index) => ({
+        key: brandName.toLowerCase(),
+        label: brandName,
+        value: totals[brandName.toLowerCase()] || 0,
+        tone: STOCK_CARD_TONES[(index + 1) % STOCK_CARD_TONES.length],
+        icon: GlobeIcon,
+      })),
+    ];
+  }, [products]);
 
   const paidValue = Math.max(Number(paidAmount) || 0, 0);
   const payableAmount = Math.min(paidValue, cartSummary.subtotal);
   const balance = Math.max(cartSummary.subtotal - payableAmount, 0);
   const paidDisplayValue = payableAmount.toFixed(0);
   const hasSellers = masterData.seller.length > 0;
-  const selectedProduct = useMemo(() => findByName(products, productName, getProductOptionLabel), [productName, products]);
   const customerExists = useMemo(
     () => customers.some((customer) => normalizeText(customer.name) === normalizeText(customerName)),
     [customerName, customers],
@@ -349,35 +376,46 @@ export default function SalesPosPage() {
 
     return accounts;
   }, [masterData.bank]);
+  const selectedCustomer = useMemo(
+    () => findByName(customers, customerName),
+    [customerName, customers],
+  );
 
   function applyCustomerSelection(nextName) {
-    const selectedCustomer = findByName(customers, nextName);
     setCustomerName(nextName);
-
-    if (selectedCustomer) {
-      return;
-    }
   }
 
   function handleProductSelection(option) {
-    const quantity = Math.max(Number(productQuantity) || 0, 0);
-
     if (!option) {
       return;
     }
 
-    setProductName(getProductOptionLabel(option));
+    const quantity = Math.max(Math.floor(Number(productQuantity) || 0), 0);
 
     if (quantity <= 0) {
       setErrorMessage("Product quantity must be greater than zero.");
       return;
     }
 
-    for (let index = 0; index < quantity; index += 1) {
-      addToCart(option);
+    const currentProductQuantity = cart
+      .filter((item) => item.productId === option.id)
+      .reduce((sum, item) => sum + item.quantity, 0);
+    const remainingStock = Math.max(Number(option.currentStock || 0) - currentProductQuantity, 0);
+
+    if (!remainingStock) {
+      setErrorMessage("No remaining stock available for this product.");
+      return;
     }
 
+    if (quantity > remainingStock) {
+      setErrorMessage(`Only ${remainingStock} pcs remaining for this product.`);
+      return;
+    }
+
+    addToCart(option, quantity, productAtsMode || "ATS");
+
     setProductName("");
+    setProductAtsMode("ATS");
     setProductQuantity("1");
   }
 
@@ -577,7 +615,7 @@ export default function SalesPosPage() {
     }
   }
 
-  function addToCart(product) {
+  function addToCart(product, quantity = 1, atsMode = productAtsMode) {
     setErrorMessage("");
     setSuccessMessage("");
 
@@ -587,19 +625,28 @@ export default function SalesPosPage() {
     }
 
     setCart((current) => {
-      const existingItem = current.find((item) => item.id === product.id);
+      const requestedQuantity = Math.max(Math.floor(Number(quantity) || 0), 0);
+      const currentProductQuantity = current
+        .filter((item) => item.productId === product.id)
+        .reduce((sum, item) => sum + item.quantity, 0);
+      const remainingStock = Math.max(Number(product.currentStock || 0) - currentProductQuantity, 0);
+      const safeQuantity = Math.min(requestedQuantity, remainingStock);
+
+      if (!safeQuantity) {
+        return current;
+      }
+
+      const existingItem = current.find(
+        (item) => item.productId === product.id && item.atsMode === atsMode,
+      );
 
       if (existingItem) {
-        if (existingItem.quantity >= (product.currentStock || 0)) {
-          return current;
-        }
-
         return current.map((item) =>
-          item.id === product.id
+          item.id === existingItem.id
             ? {
                 ...item,
-                quantity: item.quantity + 1,
-                lineTotal: (item.quantity + 1) * item.unitPrice,
+                quantity: item.quantity + safeQuantity,
+                lineTotal: (item.quantity + safeQuantity) * item.unitPrice,
               }
             : item,
         );
@@ -608,16 +655,18 @@ export default function SalesPosPage() {
       return [
         ...current,
         {
-          id: product.id,
+          id: `${product.id}:${atsMode}`,
+          productId: product.id,
           displayName: product.displayName,
           productName: product.productName,
           categoryName: product.categoryName,
           brandName: product.brandName,
           variantName: product.variantName,
+          atsMode,
           unitPrice: Number(product.unitPrice || 0),
           currentStock: Number(product.currentStock || 0),
-          quantity: 1,
-          lineTotal: Number(product.unitPrice || 0),
+          quantity: safeQuantity,
+          lineTotal: safeQuantity * Number(product.unitPrice || 0),
         },
       ];
     });
@@ -631,7 +680,11 @@ export default function SalesPosPage() {
             return item;
           }
 
-          const safeQuantity = Math.max(0, Math.min(nextQuantity, item.currentStock));
+          const otherProductQuantity = current
+            .filter((other) => other.productId === item.productId && other.id !== item.id)
+            .reduce((sum, other) => sum + other.quantity, 0);
+          const availableForItem = Math.max(item.currentStock - otherProductQuantity, 0);
+          const safeQuantity = Math.max(0, Math.min(nextQuantity, availableForItem));
           if (!safeQuantity) {
             return null;
           }
@@ -644,6 +697,45 @@ export default function SalesPosPage() {
         })
         .filter(Boolean),
     );
+  }
+
+  function updateCartItemAtsMode(cartItemId, nextAtsMode) {
+    setCart((current) => {
+      const itemToUpdate = current.find((item) => item.id === cartItemId);
+
+      if (!itemToUpdate) {
+        return current;
+      }
+
+      const nextId = `${itemToUpdate.productId}:${nextAtsMode}`;
+      const duplicate = current.find((item) => item.id === nextId && item.id !== cartItemId);
+
+      if (!duplicate) {
+        return current.map((item) =>
+          item.id === cartItemId ? { ...item, id: nextId, atsMode: nextAtsMode } : item,
+        );
+      }
+
+      return current
+        .map((item) => {
+          if (item.id === duplicate.id) {
+            const quantity = Math.min(item.quantity + itemToUpdate.quantity, item.currentStock);
+            return {
+              ...item,
+              quantity,
+              lineTotal: quantity * item.unitPrice,
+            };
+          }
+
+          if (item.id === cartItemId) {
+            return null;
+          }
+
+          return item;
+        }
+        )
+        .filter(Boolean);
+    });
   }
 
   function removeCartItem(productId) {
@@ -672,18 +764,22 @@ export default function SalesPosPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           customerName,
+          customerAddress: selectedCustomer?.address || "",
+          customerPhone: selectedCustomer?.phone || "",
           sellerName,
           paymentMethod: "Cash",
           paymentAccount: trimmedPaymentAccount,
           paidAmount: payableAmount,
           invoiceTotal: subtotal,
+          dueDate,
           warrantyMonths: Number(warrantyMonths) || 0,
           note,
           items: cartSummary.checkoutLines.map((item) => ({
-            productId: item.id,
+            productId: item.productId,
             quantity: item.quantity,
             unitPrice: item.saleUnitPrice,
             lineTotal: Math.round(item.saleLineTotal),
+            atsMode: item.atsMode,
           })),
         }),
       });
@@ -708,11 +804,13 @@ export default function SalesPosPage() {
       setCart([]);
       setCustomerName("");
       setSellerName("");
-      setPaymentAccount(DEFAULT_PAYMENT_ACCOUNT);
+      setPaymentAccount("");
       setPaidAmount("");
+      setDueDate("");
       setProfitAmount("");
-      setWarrantyMonths("0");
+      setWarrantyMonths("");
       setNote("");
+      setProductAtsMode("ATS");
       setSuccessMessage(`Sale completed. Invoice ${result.invoiceNo} created.`);
     } catch (error) {
       setErrorMessage(error.message || "Failed to complete sale.");
@@ -790,6 +888,29 @@ export default function SalesPosPage() {
         </article>
       </div>
 
+      <div className="stats-grid sales-header-stock-grid">
+        <div className="purchase-stock-summary-head">
+          <div>
+            <h3>Stock Summary</h3>
+          </div>
+        </div>
+        {stockCards.map((card) => {
+          const Icon = card.icon;
+
+          return (
+            <article key={card.key} className={card.tone}>
+              <span className="stat-icon">
+                <Icon />
+              </span>
+              <div>
+                <p>{card.label}</p>
+                <strong>{card.value}</strong>
+              </div>
+            </article>
+          );
+        })}
+      </div>
+
       {successMessage ? <p className="admin-feedback admin-feedback-success">{successMessage}</p> : null}
       {errorMessage ? <p className="admin-feedback admin-feedback-error">{errorMessage}</p> : null}
 
@@ -816,6 +937,25 @@ export default function SalesPosPage() {
                       getOptionLabel={getProductOptionLabel}
                       onSelect={handleProductSelection}
                     />
+                    <label className="purchase-field-stack sales-field-stack sales-product-ats-field">
+                      <span>ATS mode</span>
+                      <div className="purchase-select-wrap">
+                        <select
+                          className="purchase-input purchase-select purchase-select-input sales-input-strong"
+                          value={productAtsMode}
+                          onChange={(event) => setProductAtsMode(event.target.value)}
+                        >
+                          {ATS_OPTIONS.map((option) => (
+                            <option key={option} value={option}>
+                              {option}
+                            </option>
+                          ))}
+                        </select>
+                        <span className="purchase-select-arrow" aria-hidden="true">
+                          <ChevronDownIcon />
+                        </span>
+                      </div>
+                    </label>
                     <label className="purchase-field-stack sales-field-stack sales-product-qty-field">
                       <span>Qty</span>
                       <input
@@ -829,18 +969,9 @@ export default function SalesPosPage() {
                     </label>
                   </div>
 
-                  {selectedProduct ? (
-                    <div className="sales-product-selected-meta">
-                      <span>{getProductMeta(selectedProduct) || "General product"}</span>
-                      <strong>
-                        {formatCurrency(selectedProduct.unitPrice)} | {formatUnits(Math.max((selectedProduct.currentStock || 0) - (stockByProduct[selectedProduct.id] || 0), 0))}
-                      </strong>
-                    </div>
-                  ) : null}
-
                   <div className="sales-checkout-grid sales-checkout-grid-two">
                     <SearchableDropdownField
-                      label="Customer name"
+                      label="Buyer"
                       value={customerName}
                       onValueChange={applyCustomerSelection}
                       options={customers}
@@ -869,7 +1000,7 @@ export default function SalesPosPage() {
                       value={paymentAccount}
                       onValueChange={setPaymentAccount}
                       options={paymentAccounts}
-                      placeholder="Cash or select bank"
+                      placeholder="Select cash or bank"
                       actionLabel={
                         !paymentAccounts.some((account) => normalizeText(account.name) === normalizeText(paymentAccount)) &&
                         paymentAccount.trim()
@@ -894,6 +1025,16 @@ export default function SalesPosPage() {
                         placeholder={cart.length ? cartSummary.subtotal.toFixed(0) : "0"}
                         value={paidAmount}
                         onChange={(event) => setPaidAmount(event.target.value)}
+                      />
+                    </label>
+
+                    <label className="purchase-field-stack sales-field-stack">
+                      <span>Due payment date</span>
+                      <input
+                        className="purchase-input sales-input-strong"
+                        type="date"
+                        value={dueDate}
+                        onChange={(event) => setDueDate(event.target.value)}
                       />
                     </label>
 
@@ -965,6 +1106,24 @@ export default function SalesPosPage() {
                               <button type="button" onClick={() => updateCartQuantity(item.id, item.quantity + 1)}>
                                 +
                               </button>
+                            </div>
+
+                            <div className="purchase-select-wrap sales-cart-ats-select-wrap">
+                              <select
+                                className="purchase-input purchase-select sales-cart-ats-select"
+                                value={item.atsMode}
+                                onChange={(event) => updateCartItemAtsMode(item.id, event.target.value)}
+                                aria-label="ATS mode"
+                              >
+                                {ATS_OPTIONS.map((option) => (
+                                  <option key={option} value={option}>
+                                    {option}
+                                  </option>
+                                ))}
+                              </select>
+                              <span className="purchase-select-arrow" aria-hidden="true">
+                                <ChevronDownIcon />
+                              </span>
                             </div>
 
                             <div className="sales-cart-line-total">
@@ -1173,18 +1332,3 @@ export default function SalesPosPage() {
     </section>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

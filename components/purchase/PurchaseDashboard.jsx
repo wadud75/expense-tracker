@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import InvoicePreviewModal from "@/components/invoices/InvoicePreviewModal";
+import BoxIcon from "@/components/svgs/BoxIcon";
+import GlobeIcon from "@/components/svgs/GlobeIcon";
 import { translations } from "@/components/purchase/purchaseContent";
 import usePurchaseLanguage from "@/components/purchase/usePurchaseLanguage";
 import { purchaseIcons } from "@/components/purchase/purchaseContent";
@@ -11,6 +13,7 @@ import { downloadInvoicePdf } from "@/lib/invoicePrint";
 
 const { CalendarIcon, PlusIcon, SearchIcon } = purchaseIcons;
 const QUICK_FILTER_KEYS = ["today", "7days", "30days", "1year", "lifetime"];
+const STOCK_CARD_TONES = ["stat-card stat-lavender", "stat-card stat-sky", "stat-card stat-green"];
 
 function formatAmount(value) {
   return (Number(value) || 0).toFixed(0);
@@ -191,7 +194,7 @@ export default function PurchaseDashboard() {
 
   const sortedPurchases = useMemo(() => {
     return [...purchases].sort(
-      (left, right) => getPurchaseTimestamp(right.createdAt) - getPurchaseTimestamp(left.createdAt),
+      (left, right) => getPurchaseTimestamp(left.createdAt) - getPurchaseTimestamp(right.createdAt),
     );
   }, [purchases]);
 
@@ -256,6 +259,40 @@ export default function PurchaseDashboard() {
     formatAmount(averagePayment),
   ];
   const subtitle = `Total ${purchases.length} purchases`;
+  const stockCards = useMemo(() => {
+    const brandNames = Array.from(
+      new Set(
+        purchases
+          .map((purchase) => String(purchase.brandName || "").trim())
+          .filter(Boolean),
+      ),
+    ).sort((left, right) => left.localeCompare(right));
+
+    const totals = { total: 0 };
+    brandNames.forEach((brandName) => {
+      totals[brandName.toLowerCase()] = 0;
+    });
+
+    purchases.forEach((purchase) => {
+      const quantity = Number(purchase.quantity || 0);
+      totals.total += quantity;
+      const brandKey = String(purchase.brandName || "").trim().toLowerCase();
+      if (brandKey && Object.prototype.hasOwnProperty.call(totals, brandKey)) {
+        totals[brandKey] += quantity;
+      }
+    });
+
+    return [
+      { key: "total", label: "Total Stock", value: totals.total, tone: STOCK_CARD_TONES[0], icon: BoxIcon },
+      ...brandNames.map((brandName, index) => ({
+        key: brandName.toLowerCase(),
+        label: brandName,
+        value: totals[brandName.toLowerCase()] || 0,
+        tone: STOCK_CARD_TONES[(index + 1) % STOCK_CARD_TONES.length],
+        icon: GlobeIcon,
+      })),
+    ];
+  }, [purchases]);
 
   function handleQuickFilterClick(filterKey) {
     setActiveQuickFilter(filterKey);
@@ -308,6 +345,29 @@ export default function PurchaseDashboard() {
               <div>
                 <p>{card.title}</p>
                 <strong>{displayedStats[index]}</strong>
+              </div>
+            </article>
+          );
+        })}
+      </div>
+
+      <div className="stats-grid purchase-header-stock-grid">
+        <div className="purchase-stock-summary-head">
+          <div>
+            <h3>Stock Summary</h3>
+          </div>
+        </div>
+        {stockCards.map((card) => {
+          const Icon = card.icon;
+
+          return (
+            <article key={card.key} className={card.tone}>
+              <span className="stat-icon">
+                <Icon />
+              </span>
+              <div>
+                <p>{card.label}</p>
+                <strong>{card.value}</strong>
               </div>
             </article>
           );

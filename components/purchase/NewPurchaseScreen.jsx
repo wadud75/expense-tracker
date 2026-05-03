@@ -320,7 +320,7 @@ function PurchaseFormContent({ modal, t, router }) {
                     onValueChange={(nextValue) => handleChange({ target: { name: "supplierName", value: nextValue } })}
                     required
                     options={masterData.supplier}
-                    onAdd={() => handleAddMasterItem("supplier", "supplierName", t.supplierTitle)}
+                    onAdd={() => handleAddMasterItem("supplier", "supplierName", t.supplierTitle, true)}
                     addDisabled={savingMasterType === "supplier"}
                     addLabel={savingMasterType === "supplier" ? t.adminLoading : t.adminAdd}
                     inputPlaceholder={t.supplierPlaceholder}
@@ -346,7 +346,7 @@ function PurchaseFormContent({ modal, t, router }) {
                       onValueChange={(nextValue) => handleChange({ target: { name: "categoryName", value: nextValue } })}
                       required
                       options={masterData.category}
-                      onAdd={() => handleAddMasterItem("category", "categoryName", t.categoryName)}
+                      onAdd={() => handleAddMasterItem("category", "categoryName", t.categoryName, true)}
                       addDisabled={savingMasterType === "category"}
                       addLabel={savingMasterType === "category" ? t.adminLoading : t.adminAdd}
                       inputPlaceholder={t.categoryPlaceholder}
@@ -357,7 +357,7 @@ function PurchaseFormContent({ modal, t, router }) {
                       value={formState.brandName}
                       onValueChange={(nextValue) => handleChange({ target: { name: "brandName", value: nextValue } })}
                       options={masterData.brand}
-                      onAdd={() => handleAddMasterItem("brand", "brandName", t.brandName)}
+                      onAdd={() => handleAddMasterItem("brand", "brandName", t.brandName, true)}
                       addDisabled={savingMasterType === "brand"}
                       addLabel={savingMasterType === "brand" ? t.adminLoading : t.adminAdd}
                       inputPlaceholder={t.brandPlaceholder}
@@ -370,7 +370,7 @@ function PurchaseFormContent({ modal, t, router }) {
                       value={formState.modelName}
                       onValueChange={(nextValue) => handleChange({ target: { name: "modelName", value: nextValue } })}
                       options={masterData.model}
-                      onAdd={() => handleAddMasterItem("model", "modelName", "Color")}
+                      onAdd={() => handleAddMasterItem("model", "modelName", "Color", true)}
                       addDisabled={savingMasterType === "model"}
                       addLabel={savingMasterType === "model" ? t.adminLoading : t.adminAdd}
                       inputPlaceholder="Type or select color"
@@ -381,7 +381,7 @@ function PurchaseFormContent({ modal, t, router }) {
                       value={formState.variantName}
                       onValueChange={(nextValue) => handleChange({ target: { name: "variantName", value: nextValue } })}
                       options={masterData.variant}
-                      onAdd={() => handleAddMasterItem("variant", "variantName", t.variantName)}
+                      onAdd={() => handleAddMasterItem("variant", "variantName", t.variantName, true)}
                       addDisabled={savingMasterType === "variant"}
                       addLabel={savingMasterType === "variant" ? t.adminLoading : t.adminAdd}
                       inputPlaceholder={t.variantPlaceholder}

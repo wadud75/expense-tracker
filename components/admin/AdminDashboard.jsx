@@ -182,7 +182,7 @@ export default function AdminDashboard() {
           const capitalItems = Array.isArray(masterResult.items?.capital) ? masterResult.items.capital : [];
           setCapitalEntries(
             [...capitalItems].sort(
-              (left, right) => new Date(right.createdAt || 0).getTime() - new Date(left.createdAt || 0).getTime(),
+              (left, right) => new Date(left.createdAt || 0).getTime() - new Date(right.createdAt || 0).getTime(),
             ),
           );
           setProducts(Array.isArray(stockResult.products) ? stockResult.products : []);

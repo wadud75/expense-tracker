@@ -10,6 +10,18 @@ import {
 } from "@/components/purchase/purchaseContent";
 
 const LANGUAGE_CHANGE_EVENT = "expense-tracker-language-change";
+const MENU_LABEL_INDEX_BY_KEY = {
+  dashboard: 0,
+  purchase: 1,
+  salesPos: 2,
+  salesList: 3,
+  productList: 4,
+  stock: 5,
+  due: 6,
+  warranty: 7,
+  customers: 8,
+  sellers: 9,
+};
 
 export default function usePurchaseLanguage() {
   const initialLanguage = detectLanguage();
@@ -39,7 +51,7 @@ export default function usePurchaseLanguage() {
   const locale = language === "bn" ? "bn-BD" : "en-US";
   const menuItems = menuConfig.map((item, index) => ({
     ...item,
-    label: t.menuItems[index],
+    label: t.menuItems[MENU_LABEL_INDEX_BY_KEY[item.key] ?? index],
   }));
   const statCards = statCardConfig.map((card, index) => ({
     ...card,

@@ -372,7 +372,7 @@ export default function CustomerManagementPage() {
               <SearchIcon />
               <input
                 type="text"
-                placeholder="Search name, phone, email, address, note, or segment"
+                placeholder="Search name, phone, address, note, or segment"
                 value={searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
               />
@@ -417,7 +417,7 @@ export default function CustomerManagementPage() {
                     </span>
                     <span className="customer-pro-cell">
                       <strong>{customer.phone || "-"}</strong>
-                      <small>{customer.email || "No email address"}</small>
+                      <small>{customer.address || "No address added"}</small>
                     </span>
                     <span className="customer-pro-cell">
                       <strong>{customer.segment}</strong>
@@ -458,7 +458,7 @@ export default function CustomerManagementPage() {
                   <div className="customer-pro-mobile-head">
                     <div>
                       <strong>{customer.name}</strong>
-                      <p>{customer.phone || customer.email || "No direct contact"}</p>
+                      <p>{customer.phone || customer.address || "No direct contact"}</p>
                     </div>
                     <span className={`customer-status customer-status-${customer.status}`}>{customer.status}</span>
                   </div>

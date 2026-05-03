@@ -3,6 +3,10 @@
 import { useEffect, useMemo, useState } from "react";
 import usePurchaseLanguage from "@/components/purchase/usePurchaseLanguage";
 import { formatListDateTime } from "@/lib/dateFormat";
+import BoxIcon from "@/components/svgs/BoxIcon";
+import GlobeIcon from "@/components/svgs/GlobeIcon";
+
+const STOCK_CARD_TONES = ["stat-card stat-lavender", "stat-card stat-sky", "stat-card stat-green"];
 
 function ChevronDownIcon() {
   return (
@@ -119,6 +123,41 @@ export default function StockPage() {
       { label: "Stock Value", value: formatWholeNumber(overview.totalValue || 0), tone: "teal" },
     ];
   }, [snapshot]);
+  const stockCards = useMemo(() => {
+    const products = snapshot?.products || [];
+    const brandNames = Array.from(
+      new Set(
+        products
+          .map((product) => String(product.brandName || "").trim())
+          .filter(Boolean),
+      ),
+    ).sort((left, right) => left.localeCompare(right));
+
+    const totals = { total: 0 };
+    brandNames.forEach((brandName) => {
+      totals[brandName.toLowerCase()] = 0;
+    });
+
+    products.forEach((product) => {
+      const quantity = Number(product.currentStock || 0);
+      totals.total += quantity;
+      const brandKey = String(product.brandName || "").trim().toLowerCase();
+      if (brandKey && Object.prototype.hasOwnProperty.call(totals, brandKey)) {
+        totals[brandKey] += quantity;
+      }
+    });
+
+    return [
+      { key: "total", label: "Total Stock", value: totals.total, tone: STOCK_CARD_TONES[0], icon: BoxIcon },
+      ...brandNames.map((brandName, index) => ({
+        key: brandName.toLowerCase(),
+        label: brandName,
+        value: totals[brandName.toLowerCase()] || 0,
+        tone: STOCK_CARD_TONES[(index + 1) % STOCK_CARD_TONES.length],
+        icon: GlobeIcon,
+      })),
+    ];
+  }, [snapshot]);
 
   async function handleAdjustStock(event) {
     event.preventDefault();
@@ -171,6 +210,29 @@ export default function StockPage() {
             <strong>{card.value}</strong>
           </article>
         ))}
+      </div>
+
+      <div className="stats-grid purchase-header-stock-grid">
+        <div className="purchase-stock-summary-head">
+          <div>
+            <h3>Stock Summary</h3>
+          </div>
+        </div>
+        {stockCards.map((card) => {
+          const Icon = card.icon;
+
+          return (
+            <article key={card.key} className={card.tone}>
+              <span className="stat-icon">
+                <Icon />
+              </span>
+              <div>
+                <p>{card.label}</p>
+                <strong>{card.value}</strong>
+              </div>
+            </article>
+          );
+        })}
       </div>
 
       <div className="stock-layout">
@@ -265,39 +327,37 @@ export default function StockPage() {
           {isLoading ? (
             <div className="table-card"><div className="table-empty">Loading...</div></div>
           ) : (
-            <div className="table-card stock-table-card stock-overview-scroll">
-              <div className="stock-table-head stock-table-head-compact">
-                <span>Category</span>
-                <span>Brand</span>
-                <span>Variant</span>
-                <span>Stock</span>
-              </div>
-              {products.map((product) => {
-                const stockTone = getStockTone(product.currentStock || 0);
-                const stockLabel = getStockLabel(product.currentStock || 0);
+            <div className="table-card clean-table-card">
+              <div className="clean-table-scroll">
+                <table className="clean-data-table stock-overview-table">
+                  <thead>
+                    <tr>
+                      <th>Category</th>
+                      <th>Brand</th>
+                      <th>Variant</th>
+                      <th>Stock</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {products.map((product) => {
+                      const stockTone = getStockTone(product.currentStock || 0);
+                      const stockLabel = getStockLabel(product.currentStock || 0);
 
-                return (
-                  <div key={product.id} className="stock-table-row stock-table-row-compact">
-                    <div className="stock-mobile-cell stock-cell-center">
-                      <small className="stock-mobile-label">Category</small>
-                      <span>{product.categoryName || "-"}</span>
-                    </div>
-                    <div className="stock-mobile-cell stock-cell-center">
-                      <small className="stock-mobile-label">Brand</small>
-                      <span>{product.brandName || "-"}</span>
-                    </div>
-                    <div className="stock-mobile-cell stock-cell-center">
-                      <small className="stock-mobile-label">Variant</small>
-                      <span>{product.variantName || "-"}</span>
-                    </div>
-                    <div className="stock-mobile-cell stock-qty-cell stock-cell-center">
-                      <small className="stock-mobile-label">Stock</small>
-                      <strong>{product.currentStock}</strong>
-                      <span className={`stock-level-badge stock-level-${stockTone}`}>{stockLabel}</span>
-                    </div>
-                  </div>
-                );
-              })}
+                      return (
+                        <tr key={product.id}>
+                          <td>{product.categoryName || "-"}</td>
+                          <td>{product.brandName || "-"}</td>
+                          <td>{product.variantName || "-"}</td>
+                          <td className="clean-stack-cell clean-center-cell">
+                            <strong>{product.currentStock}</strong>
+                            <span className={`stock-level-badge stock-level-${stockTone}`}>{stockLabel}</span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
         </section>
@@ -310,34 +370,46 @@ export default function StockPage() {
             <p className="stock-panel-copy">Track purchase, sale, and manual adjustment activity in one place.</p>
           </div>
         </div>
-        <div className="table-card stock-table-card">
-          <div className="stock-movement-head">
-            <span>Product</span>
-            <span>Type</span>
-            <span>Qty</span>
-            <span>Note</span>
-            <span>Date</span>
-          </div>
-          {movements.map((movement) => {
-            const movementTone = getMovementTone(movement.type);
-            const movementLabel = getMovementLabel(movement.type);
-            const quantityPrefix = movementTone === "out" ? "-" : "+";
+        <div className="table-card clean-table-card">
+          <div className="clean-table-scroll">
+            <table className="clean-data-table stock-movement-table">
+              <thead>
+                <tr>
+                  <th>Product</th>
+                  <th>Type</th>
+                  <th>Qty</th>
+                  <th>Note</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {movements.map((movement) => {
+                  const movementTone = getMovementTone(movement.type);
+                  const movementLabel = getMovementLabel(movement.type);
+                  const quantityPrefix = movementTone === "out" ? "-" : "+";
 
-            return (
-              <div key={movement.id} className="stock-movement-row">
-                <div className="stock-product-cell">
-                  <strong>{movement.productName}</strong>
-                  <span>{movement.referenceType || "Stock movement"}</span>
-                </div>
-                <span className={`stock-movement-badge stock-movement-${movementTone}`}>{movementLabel}</span>
-                <strong className={`stock-movement-qty stock-movement-qty-${movementTone}`}>
-                  {quantityPrefix}{Math.abs(Number(movement.quantity) || 0)}
-                </strong>
-                <span>{movement.note || "-"}</span>
-                <span>{formatListDateTime(movement.createdAt)}</span>
-              </div>
-            );
-          })}
+                  return (
+                    <tr key={movement.id}>
+                      <td className="clean-stack-cell clean-text-cell">
+                        <strong>{movement.productName}</strong>
+                        <span>{movement.referenceType || "Stock movement"}</span>
+                      </td>
+                      <td className="clean-center-cell">
+                        <span className={`stock-movement-badge stock-movement-${movementTone}`}>{movementLabel}</span>
+                      </td>
+                      <td className="clean-center-cell">
+                        <strong className={`stock-movement-qty stock-movement-qty-${movementTone}`}>
+                          {quantityPrefix}{Math.abs(Number(movement.quantity) || 0)}
+                        </strong>
+                      </td>
+                      <td>{movement.note || "-"}</td>
+                      <td>{formatListDateTime(movement.createdAt)}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       </section>
     </section>
